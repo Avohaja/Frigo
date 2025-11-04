@@ -10,7 +10,7 @@ import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import AddProduct from "./pages/AddProduct";
 import EditProduct from "./pages/EditProduct";
-
+import Dashboard from "./pages/Dashboard";
 function App() {
   const [page, setPage] = useState("inventory");
   const [editingProductId, setEditingProductId] = useState(null);
@@ -22,6 +22,8 @@ function App() {
 
   const renderPage = () => {
     switch (page) {
+      case "Dashboard":
+        return <Dashboard />;
       case "inventory":
         return <Inventory onAddProduct={() => setPage("addProduct")} onEditProduct={handleEditProduct} />;
       case "recipes":
@@ -53,6 +55,14 @@ function App() {
               <div className="flex items-center gap-8">
                 <h1 className="text-2xl font-bold text-gray-900">SmartChill</h1>
                 <nav className="flex gap-6">
+                  <button
+                    onClick={() => setPage("Dashboard")}
+                    className={`text-base font-medium ${
+                      page === "Dashboard" ? "text-green-500" : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    Dashboard
+                  </button>
                   <button
                     onClick={() => setPage("inventory")}
                     className={`text-base font-medium ${

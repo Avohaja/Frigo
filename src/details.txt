@@ -1,0 +1,7 @@
+Travail demandé :
+Objectif : connaître le contenu de son réfrigérateur, éviter la déperdition de denrées, suggérer des menus.
+On aimerait obtenir des services d'un réfrigérateur comme :
+➢ Avertir des produits qui approchent de leur date de péremption, ou qui l'ont dépassée.
+➢ Interroger son réfrigérateur à distance (téléphone portable) pour vérifier la présence d'un produit : la question " Combien me reste-t-il d’œufs ? "
+➢ Proposer une liste de courses afin d'éviter de manger toujours les mêmes produits.
+ Pour détecter à l'entrée réfrigérateur quel article entre ou en sort on pourra utiliser la technologie (ou tout autre solution) technique qui permet de connaître de manière dynamique les services disponibles dans un réseau.
