@@ -1,6 +1,7 @@
-import { createContext, useState, useContext } from 'react';
+import { createContext, useState, useContext, useEffect } from 'react';
 
 const ProductContext = createContext();
+const API_URL = 'http://localhost:5000/api';
 
 export const useProducts = () => {
   const context = useContext(ProductContext);
@@ -11,50 +12,23 @@ export const useProducts = () => {
 };
 
 export const ProductProvider = ({ children }) => {
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: 'Lait',
-      category: 'Produits laitiers',
-      expiration: '2024-07-15',
-      quantity: 1,
-      status: 'fresh'
-    },
-    {
-      id: 2,
-      name: 'Yaourt',
-      category: 'Produits laitiers',
-      expiration: '2024-07-10',
-      quantity: 4,
-      status: 'expiring'
-    },
-    {
-      id: 3,
-      name: 'Pommes',
-      category: 'Fruits & Légumes',
-      expiration: '2024-07-20',
-      quantity: 5,
-      status: 'fresh'
-    },
-    {
-      id: 4,
-      name: 'Poulet',
-      category: 'Viandes',
-      expiration: '2024-07-05',
-      quantity: 1,
-      status: 'expired'
-    },
-    {
-      id: 5,
-      name: 'Carottes',
-      category: 'Fruits & Légumes',
-      expiration: '2024-07-12',
-      quantity: 2,
-      status: 'low'
-    }
-  ]);
+  const [products, setProducts] = useState([]);
 
-  // Fonction pour calculer le statut
+  // Fetch products from API
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch(`${API_URL}/products`);
+      const data = await response.json();
+      setProducts(data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
+
   const calculateStatus = (expiration, quantity) => {
     const today = new Date();
     const expirationDate = new Date(expiration);
@@ -66,31 +40,51 @@ export const ProductProvider = ({ children }) => {
     return 'fresh';
   };
 
-  // CREATE
-  const addProduct = (product) => {
-    const newProduct = {
-      id: Date.now(),
-      ...product,
-      status: calculateStatus(product.expiration, product.quantity)
-    };
-    setProducts([...products, newProduct]);
+  const addProduct = async (product) => {
+    try {
+      const productWithStatus = {
+        ...product,
+        status: calculateStatus(product.expiration, product.quantity)
+      };
+      const response = await fetch(`${API_URL}/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(productWithStatus)
+      });
+      const newProduct = await response.json();
+      setProducts([...products, newProduct]);
+    } catch (error) {
+      console.error('Error adding product:', error);
+    }
   };
 
-  // UPDATE
-  const updateProduct = (id, updatedProduct) => {
-    setProducts(products.map(p => 
-      p.id === id 
-        ? { ...updatedProduct, id, status: calculateStatus(updatedProduct.expiration, updatedProduct.quantity) }
-        : p
-    ));
+  const updateProduct = async (id, updatedProduct) => {
+    try {
+      const productWithStatus = {
+        ...updatedProduct,
+        status: calculateStatus(updatedProduct.expiration, updatedProduct.quantity)
+      };
+      const response = await fetch(`${API_URL}/products/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(productWithStatus)
+      });
+      const updated = await response.json();
+      setProducts(products.map(p => p.id === id ? updated : p));
+    } catch (error) {
+      console.error('Error updating product:', error);
+    }
   };
 
-  // DELETE
-  const deleteProduct = (id) => {
-    setProducts(products.filter(p => p.id !== id));
+  const deleteProduct = async (id) => {
+    try {
+      await fetch(`${API_URL}/products/${id}`, { method: 'DELETE' });
+      setProducts(products.filter(p => p.id !== id));
+    } catch (error) {
+      console.error('Error deleting product:', error);
+    }
   };
 
-  // GET ONE
   const getProduct = (id) => {
     return products.find(p => p.id === id);
   };
