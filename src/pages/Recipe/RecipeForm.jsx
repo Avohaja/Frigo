@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, X } from 'lucide-react';
+import { ArrowLeft, Plus, X, Check } from 'lucide-react';
 import { useRecipes } from '../../context/RecipeContext';
+import { useProducts } from '../../context/ProductContext';
 
 function RecipeForm({ recipeId, onBack }) {
   const { getRecipe, addRecipe, updateRecipe } = useRecipes();
+  const { products } = useProducts();
+  
   const [form, setForm] = useState({
     title: "",
     type: "",
@@ -12,12 +15,14 @@ function RecipeForm({ recipeId, onBack }) {
     image: "",
     availableIngredients: [],
     missingIngredients: [],
-    steps: []
+    steps: [],
+    isUsed: false
   });
 
-  const [currentIngredient, setCurrentIngredient] = useState("");
   const [currentMissingIngredient, setCurrentMissingIngredient] = useState("");
   const [currentStep, setCurrentStep] = useState("");
+  const [showProductSelector, setShowProductSelector] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     if (recipeId) {
@@ -33,14 +38,23 @@ function RecipeForm({ recipeId, onBack }) {
     setForm({ ...form, [name]: value });
   };
 
-  const addIngredient = () => {
-    if (currentIngredient.trim()) {
+  // Filtrer les produits en fonction de la recherche
+  const getFilteredProducts = () => {
+    return products.filter(product => 
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      !form.availableIngredients.includes(product.name)
+    );
+  };
+
+  // Ajouter un produit disponible depuis l'inventaire
+  const addProductIngredient = (productName) => {
+    if (!form.availableIngredients.includes(productName)) {
       setForm({
         ...form,
-        availableIngredients: [...form.availableIngredients, currentIngredient.trim()]
+        availableIngredients: [...form.availableIngredients, productName]
       });
-      setCurrentIngredient("");
     }
+    setSearchTerm("");
   };
 
   const removeIngredient = (index) => {
@@ -189,28 +203,51 @@ function RecipeForm({ recipeId, onBack }) {
             />
           </div>
 
+          {/* Sélection des ingrédients depuis l'inventaire */}
           <div>
-            <label className="block text-gray-700 mb-2 font-medium">Ingrédients disponibles</label>
-            <div className="flex gap-2 mb-3">
-              <input
-                type="text"
-                value={currentIngredient}
-                onChange={(e) => setCurrentIngredient(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addIngredient())}
-                placeholder="Ex: Carottes, Pommes de terre..."
-                className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={addIngredient}
-                className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-medium"
-              >
-                <Plus size={20} />
-              </button>
+            <label className="block text-gray-700 mb-2 font-medium">Ingrédients disponibles depuis l'inventaire</label>
+            <div className="mb-3">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Rechercher un produit dans l'inventaire..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setShowProductSelector(true);
+                  }}
+                  onFocus={() => setShowProductSelector(true)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
+                />
+                
+                {showProductSelector && getFilteredProducts().length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {getFilteredProducts().map((product) => (
+                      <button
+                        key={product.id}
+                        type="button"
+                        onClick={() => {
+                          addProductIngredient(product.name);
+                          setShowProductSelector(false);
+                        }}
+                        className="w-full text-left px-4 py-3 hover:bg-green-50 flex items-center justify-between group"
+                      >
+                        <div>
+                          <p className="font-medium text-gray-900">{product.name}</p>
+                          <p className="text-sm text-gray-600">{product.category} - Quantité: {product.quantity}</p>
+                        </div>
+                        <Plus size={18} className="text-green-600 opacity-0 group-hover:opacity-100" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
+            
             <div className="flex flex-wrap gap-2">
               {form.availableIngredients.map((ingredient, index) => (
                 <span key={index} className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
+                  <Check size={14} />
                   {ingredient}
                   <button
                     type="button"
@@ -222,8 +259,15 @@ function RecipeForm({ recipeId, onBack }) {
                 </span>
               ))}
             </div>
+            
+            {form.availableIngredients.length === 0 && (
+              <p className="text-sm text-gray-500 italic mt-2">
+                Aucun ingrédient sélectionné. Recherchez un produit dans votre inventaire.
+              </p>
+            )}
           </div>
 
+          {/* Ingrédients manquants */}
           <div>
             <label className="block text-gray-700 mb-2 font-medium">Ingrédients manquants (optionnel)</label>
             <div className="flex gap-2 mb-3">
@@ -259,6 +303,7 @@ function RecipeForm({ recipeId, onBack }) {
             </div>
           </div>
 
+          {/* Étapes */}
           <div>
             <label className="block text-gray-700 mb-2 font-medium">Étapes de préparation</label>
             <div className="flex gap-2 mb-3">

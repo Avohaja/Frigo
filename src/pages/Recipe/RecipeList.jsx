@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Search, Edit2, Trash2, ChevronDown, Plus, Clock } from 'lucide-react';
+import { Search, Edit2, Trash2, ChevronDown, Plus, Clock, Check } from 'lucide-react';
 import { useRecipes } from '../../context/RecipeContext';
 
 function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
-  const { recipes, deleteRecipe } = useRecipes();
+  const { recipes, deleteRecipe, toggleRecipeUsage } = useRecipes();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterDifficulty, setFilterDifficulty] = useState('all');
@@ -31,12 +31,21 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
     }
   };
 
+  const handleToggleUsage = async (e, recipeId) => {
+    e.stopPropagation();
+    try {
+      await toggleRecipeUsage(recipeId);
+    } catch (error) {
+      alert('Erreur lors de la mise à jour de la recette');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-8">
           <h2 className="text-4xl font-bold text-gray-900 mb-2">Recettes</h2>
-          <p className="text-gray-600">Découvrez et gérez vos recettes favorites.</p>
+          <p className="text-gray-600">Découvrez et gérez vos recettes favorites. Cochez celles que vous utilisez pour ajouter automatiquement les ingrédients manquants à votre liste de courses.</p>
         </div>
 
         <div className="flex items-center justify-between mb-6 gap-4">
@@ -137,13 +146,44 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
             </div>
           ) : (
             getFilteredRecipes().map((recipe) => (
-              <div key={recipe.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+              <div 
+                key={recipe.id} 
+                className={`bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all ${
+                  recipe.isUsed ? 'ring-2 ring-green-500' : ''
+                }`}
+              >
                 <div 
-                  className="h-48 bg-cover bg-center cursor-pointer"
+                  className="h-48 bg-cover bg-center cursor-pointer relative"
                   style={{ backgroundImage: `url(${recipe.image})` }}
                   onClick={() => onViewRecipe(recipe.id)}
-                />
+                >
+                  {recipe.isUsed && (
+                    <div className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                      <Check size={14} />
+                      En cours
+                    </div>
+                  )}
+                </div>
                 <div className="p-5">
+                  {/* Checkbox pour marquer comme utilisé */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <button
+                      onClick={(e) => handleToggleUsage(e, recipe.id)}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${
+                        recipe.isUsed 
+                          ? 'bg-green-500 text-white hover:bg-green-600' 
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                        recipe.isUsed ? 'border-white bg-white' : 'border-gray-400'
+                      }`}>
+                        {recipe.isUsed && <Check size={12} className="text-green-500" />}
+                      </div>
+                      {recipe.isUsed ? 'Utilisée' : 'Utiliser'}
+                    </button>
+                  </div>
+
                   <h3 
                     className="text-xl font-bold text-gray-900 mb-2 cursor-pointer hover:text-green-600"
                     onClick={() => onViewRecipe(recipe.id)}
@@ -160,6 +200,15 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 mb-4">{recipe.type}</p>
+                  
+                  {/* Afficher les ingrédients manquants si la recette est utilisée */}
+                  {recipe.isUsed && recipe.missingIngredients && recipe.missingIngredients.length > 0 && (
+                    <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                      <p className="text-xs font-semibold text-orange-700 mb-1">Ingrédients manquants ajoutés à la liste de courses:</p>
+                      <p className="text-xs text-orange-600">{recipe.missingIngredients.slice(0, 3).join(', ')}{recipe.missingIngredients.length > 3 ? '...' : ''}</p>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-2">
                     <button 
                       onClick={() => onViewRecipe(recipe.id)}
@@ -192,6 +241,11 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
 
         <div className="mt-6 text-sm text-gray-600">
           {getFilteredRecipes().length} recette(s) affichée(s) sur {recipes.length} total
+          {recipes.filter(r => r.isUsed).length > 0 && (
+            <span className="ml-4 text-green-600 font-medium">
+              • {recipes.filter(r => r.isUsed).length} recette(s) en cours d'utilisation
+            </span>
+          )}
         </div>
       </main>
     </div>

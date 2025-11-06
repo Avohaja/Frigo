@@ -15,7 +15,6 @@ export const RecipeProvider = ({ children }) => {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch recipes from API on mount
   useEffect(() => {
     fetchRecipes();
   }, []);
@@ -35,10 +34,14 @@ export const RecipeProvider = ({ children }) => {
 
   const addRecipe = async (recipe) => {
     try {
+      const recipeWithStatus = {
+        ...recipe,
+        isUsed: false // Par défaut, la recette n'est pas utilisée
+      };
       const response = await fetch(`${API_URL}/recipes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(recipe)
+        body: JSON.stringify(recipeWithStatus)
       });
       const newRecipe = await response.json();
       setRecipes([...recipes, newRecipe]);
@@ -65,6 +68,30 @@ export const RecipeProvider = ({ children }) => {
     }
   };
 
+  const toggleRecipeUsage = async (id) => {
+    try {
+      const recipe = recipes.find(r => r.id === id);
+      if (!recipe) return;
+
+      const updatedRecipe = {
+        ...recipe,
+        isUsed: !recipe.isUsed
+      };
+
+      const response = await fetch(`${API_URL}/recipes/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedRecipe)
+      });
+      const updated = await response.json();
+      setRecipes(recipes.map(r => r.id === id ? updated : r));
+      return updated;
+    } catch (error) {
+      console.error('Error toggling recipe usage:', error);
+      throw error;
+    }
+  };
+
   const deleteRecipe = async (id) => {
     try {
       await fetch(`${API_URL}/recipes/${id}`, { 
@@ -81,6 +108,27 @@ export const RecipeProvider = ({ children }) => {
     return recipes.find(r => r.id === id);
   };
 
+  // Obtenir les ingrédients manquants des recettes utilisées
+  const getUsedRecipesMissingIngredients = () => {
+    const usedRecipes = recipes.filter(r => r.isUsed);
+    const allMissingIngredients = [];
+    
+    usedRecipes.forEach(recipe => {
+      if (recipe.missingIngredients && recipe.missingIngredients.length > 0) {
+        recipe.missingIngredients.forEach(ingredient => {
+          if (!allMissingIngredients.some(item => item.name.toLowerCase() === ingredient.toLowerCase())) {
+            allMissingIngredients.push({
+              name: ingredient,
+              recipeName: recipe.title
+            });
+          }
+        });
+      }
+    });
+    
+    return allMissingIngredients;
+  };
+
   return (
     <RecipeContext.Provider value={{
       recipes,
@@ -89,7 +137,9 @@ export const RecipeProvider = ({ children }) => {
       updateRecipe,
       deleteRecipe,
       getRecipe,
-      fetchRecipes
+      fetchRecipes,
+      toggleRecipeUsage,
+      getUsedRecipesMissingIngredients
     }}>
       {children}
     </RecipeContext.Provider>
