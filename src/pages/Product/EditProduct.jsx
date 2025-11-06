@@ -1,15 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
-import { useProducts } from "../context/ProductContext";
+import { useProducts } from "../../context/ProductContext";
 
-export default function AddProduct({ onBack }) {
-  const { addProduct } = useProducts();
+export default function EditProduct({ productId, onBack }) {
+  const { getProduct, updateProduct } = useProducts();
   const [form, setForm] = useState({
     name: "",
     category: "",
     quantity: "",
     expiration: "",
   });
+
+  useEffect(() => {
+    if (productId) {
+      const product = getProduct(productId);
+      if (product) {
+        setForm({
+          name: product.name,
+          category: product.category,
+          quantity: product.quantity.toString(),
+          expiration: product.expiration,
+        });
+      }
+    }
+  }, [productId, getProduct]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -19,14 +33,13 @@ export default function AddProduct({ onBack }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (form.name && form.category && form.quantity && form.expiration) {
-      addProduct({
+      updateProduct(productId, {
         name: form.name,
         category: form.category,
         quantity: parseInt(form.quantity),
         expiration: form.expiration
       });
-      setForm({ name: "", category: "", quantity: "", expiration: "" });
-      alert(`Produit ajouté : ${form.name}`);
+      alert(`Produit modifié : ${form.name}`);
       onBack();
     } else {
       alert("Veuillez remplir tous les champs");
@@ -44,7 +57,7 @@ export default function AddProduct({ onBack }) {
       </button>
 
       <div className="bg-white shadow-md rounded-2xl p-8">
-        <h2 className="text-3xl font-bold mb-6 text-gray-800">Ajouter un produit</h2>
+        <h2 className="text-3xl font-bold mb-6 text-gray-800">Modifier le produit</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Nom du produit */}
           <div>
@@ -113,14 +126,14 @@ export default function AddProduct({ onBack }) {
               type="submit"
               className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl"
             >
-              Ajouter le produit
+              Enregistrer les modifications
             </button>
             <button
               type="button"
-              onClick={() => alert("Simulation de scan du code-barres 📸")}
-              className="flex-1 bg-green-100 hover:bg-green-200 text-green-700 font-semibold py-3 rounded-xl"
+              onClick={onBack}
+              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 rounded-xl"
             >
-              Simuler le scan d'un code-barres
+              Annuler
             </button>
           </div>
         </form>

@@ -1,11 +1,13 @@
-import { createContext, useState, useEffect, useContext } from "react";
+import { createContext, useState, useContext, useEffect } from 'react';
 
 const RecipeContext = createContext();
-const API_URL = "http://localhost:5000/api";
+const API_URL = 'http://localhost:5000/api';
 
 export const useRecipes = () => {
   const context = useContext(RecipeContext);
-  if (!context) throw new Error("useRecipes must be used within a RecipeProvider");
+  if (!context) {
+    throw new Error('useRecipes must be used within RecipeProvider');
+  }
   return context;
 };
 
@@ -13,80 +15,85 @@ export const RecipeProvider = ({ children }) => {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Fetch recipes from API on mount
   useEffect(() => {
     fetchRecipes();
   }, []);
 
-  // Fetch all recipes from backend
   const fetchRecipes = async () => {
     try {
-      const res = await fetch(`${API_URL}/recipes`);
-      const data = await res.json();
+      setLoading(true);
+      const response = await fetch(`${API_URL}/recipes`);
+      const data = await response.json();
       setRecipes(data);
-    } catch (err) {
-      console.error("Error fetching recipes:", err);
+    } catch (error) {
+      console.error('Error fetching recipes:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Add a new recipe
   const addRecipe = async (recipe) => {
     try {
-      const res = await fetch(`${API_URL}/recipes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(recipe),
+      const response = await fetch(`${API_URL}/recipes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(recipe)
       });
-      const newRecipe = await res.json();
-      // Refetch pour obtenir la recette complète avec tous les détails
-      await fetchRecipes();
-    } catch (err) {
-      console.error("Error adding recipe:", err);
+      const newRecipe = await response.json();
+      setRecipes([...recipes, newRecipe]);
+      return newRecipe;
+    } catch (error) {
+      console.error('Error adding recipe:', error);
+      throw error;
     }
   };
 
-  // Update a recipe
   const updateRecipe = async (id, updatedRecipe) => {
     try {
-      const res = await fetch(`${API_URL}/recipes/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedRecipe),
+      const response = await fetch(`${API_URL}/recipes/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedRecipe)
       });
-      const updated = await res.json();
-      // Refetch pour obtenir toutes les recettes mises à jour
-      await fetchRecipes();
-    } catch (err) {
-      console.error("Error updating recipe:", err);
+      const updated = await response.json();
+      setRecipes(recipes.map(r => r.id === id ? updated : r));
+      return updated;
+    } catch (error) {
+      console.error('Error updating recipe:', error);
+      throw error;
     }
   };
 
-  // Delete a recipe
   const deleteRecipe = async (id) => {
     try {
-      await fetch(`${API_URL}/recipes/${id}`, { method: "DELETE" });
-      setRecipes(recipes.filter((r) => r.id !== id));
-    } catch (err) {
-      console.error("Error deleting recipe:", err);
+      await fetch(`${API_URL}/recipes/${id}`, { 
+        method: 'DELETE' 
+      });
+      setRecipes(recipes.filter(r => r.id !== id));
+    } catch (error) {
+      console.error('Error deleting recipe:', error);
+      throw error;
     }
   };
 
-  // Get one recipe (already loaded)
-  const getRecipe = (id) => recipes.find((r) => r.id === parseInt(id));
+  const getRecipe = (id) => {
+    return recipes.find(r => r.id === id);
+  };
 
   return (
-    <RecipeContext.Provider
-      value={{
-        recipes,
-        addRecipe,
-        updateRecipe,
-        deleteRecipe,
-        getRecipe,
-        loading
-      }}
-    >
+    <RecipeContext.Provider value={{
+      recipes,
+      loading,
+      addRecipe,
+      updateRecipe,
+      deleteRecipe,
+      getRecipe,
+      fetchRecipes
+    }}>
       {children}
     </RecipeContext.Provider>
   );
 };
+
+export default RecipeContext;

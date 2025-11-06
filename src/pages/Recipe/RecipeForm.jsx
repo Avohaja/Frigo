@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { ArrowLeft, Plus, X } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Plus, X } from 'lucide-react';
+import { useRecipes } from '../../context/RecipeContext';
 
-function EditRecipeForm({ recipeId, onBack }) {
-  const { getRecipe, updateRecipe } = useRecipes();
+function RecipeForm({ recipeId, onBack }) {
+  const { getRecipe, addRecipe, updateRecipe } = useRecipes();
   const [form, setForm] = useState({
     title: "",
     type: "",
@@ -13,6 +14,7 @@ function EditRecipeForm({ recipeId, onBack }) {
     missingIngredients: [],
     steps: []
   });
+
   const [currentIngredient, setCurrentIngredient] = useState("");
   const [currentMissingIngredient, setCurrentMissingIngredient] = useState("");
   const [currentStep, setCurrentStep] = useState("");
@@ -85,8 +87,13 @@ function EditRecipeForm({ recipeId, onBack }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (form.title && form.type && form.time && form.difficulty) {
-      updateRecipe(recipeId, form);
-      alert(`Recette modifiée : ${form.title}`);
+      if (recipeId) {
+        updateRecipe(recipeId, form);
+        alert(`Recette modifiée : ${form.title}`);
+      } else {
+        addRecipe(form);
+        alert(`Recette ajoutée : ${form.title}`);
+      }
       onBack();
     } else {
       alert("Veuillez remplir tous les champs obligatoires");
@@ -95,16 +102,19 @@ function EditRecipeForm({ recipeId, onBack }) {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
-      <button
+      <button 
         onClick={onBack}
         className="flex items-center gap-2 text-green-600 hover:text-green-700 font-medium mb-6"
       >
         <ArrowLeft size={20} />
         Retour aux recettes
       </button>
-      <div className="bg-white shadow-md rounded-2xl p-8">
-        <h2 className="text-3xl font-bold mb-6 text-gray-800">Modifier la recette</h2>
 
+      <div className="bg-white shadow-md rounded-2xl p-8">
+        <h2 className="text-3xl font-bold mb-6 text-gray-800">
+          {recipeId ? 'Modifier la recette' : 'Ajouter une recette'}
+        </h2>
+        
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -119,6 +129,7 @@ function EditRecipeForm({ recipeId, onBack }) {
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
               />
             </div>
+
             <div>
               <label className="block text-gray-700 mb-2 font-medium">Type de plat *</label>
               <select
@@ -135,6 +146,7 @@ function EditRecipeForm({ recipeId, onBack }) {
                 <option value="Accompagnement">Accompagnement</option>
               </select>
             </div>
+
             <div>
               <label className="block text-gray-700 mb-2 font-medium">Temps de préparation *</label>
               <input
@@ -147,6 +159,7 @@ function EditRecipeForm({ recipeId, onBack }) {
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
               />
             </div>
+
             <div>
               <label className="block text-gray-700 mb-2 font-medium">Difficulté *</label>
               <select
@@ -163,6 +176,7 @@ function EditRecipeForm({ recipeId, onBack }) {
               </select>
             </div>
           </div>
+
           <div>
             <label className="block text-gray-700 mb-2 font-medium">URL de l'image</label>
             <input
@@ -174,6 +188,7 @@ function EditRecipeForm({ recipeId, onBack }) {
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
             />
           </div>
+
           <div>
             <label className="block text-gray-700 mb-2 font-medium">Ingrédients disponibles</label>
             <div className="flex gap-2 mb-3">
@@ -208,6 +223,7 @@ function EditRecipeForm({ recipeId, onBack }) {
               ))}
             </div>
           </div>
+
           <div>
             <label className="block text-gray-700 mb-2 font-medium">Ingrédients manquants (optionnel)</label>
             <div className="flex gap-2 mb-3">
@@ -242,6 +258,7 @@ function EditRecipeForm({ recipeId, onBack }) {
               ))}
             </div>
           </div>
+
           <div>
             <label className="block text-gray-700 mb-2 font-medium">Étapes de préparation</label>
             <div className="flex gap-2 mb-3">
@@ -278,12 +295,13 @@ function EditRecipeForm({ recipeId, onBack }) {
               ))}
             </div>
           </div>
+
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <button
               type="submit"
               className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl"
             >
-              Enregistrer les modifications
+              {recipeId ? 'Enregistrer les modifications' : 'Ajouter la recette'}
             </button>
             <button
               type="button"
@@ -298,3 +316,5 @@ function EditRecipeForm({ recipeId, onBack }) {
     </div>
   );
 }
+
+export default RecipeForm;

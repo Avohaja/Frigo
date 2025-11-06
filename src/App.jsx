@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Bell, Settings, BarChart3, Menu, X, Home, Package, BookOpen, ShoppingCart } from "lucide-react";
 import { ProductProvider } from './context/ProductContext';
-import Inventory from "./pages/Inventory";
-import Recipes from "./pages/Recipes";
+import Inventory from "./pages/Product/Inventory";
+import Recipes from "./pages/Recipe/Recipes";
 import ShoppingList from "./pages/ShoppingList";
 import Statistics from "./pages/Statistics";
 import Notifications from "./pages/Notifications";
 import SettingsPage from "./pages/Settings";
-import AddProduct from "./pages/AddProduct";
-import EditProduct from "./pages/EditProduct";
+import AddProduct from "./pages/Product/AddProduct";
+import EditProduct from "./pages/Product/EditProduct";
 import Dashboard from "./pages/Dashboard";
 
 function App() {

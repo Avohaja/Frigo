@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Edit2, Trash2, ChevronDown, Plus, Menu, X } from 'lucide-react';
-import { useProducts } from '../context/ProductContext';
+import { useProducts } from '../../context/ProductContext';
 
 export default function Inventory({ onAddProduct, onEditProduct }) {
   const { products, deleteProduct } = useProducts();
