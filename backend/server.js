@@ -171,6 +171,65 @@ app.post('/api/recipes', async (req, res) => {
   }
 });
 
+// UPDATE recipe
+app.put('/api/recipes/:id', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    const { id } = req.params;
+    const { title, image, type, time, difficulty, availableIngredients, missingIngredients, steps } = req.body;
+    
+    // Update recipe
+    const recipeResult = await client.query(
+      'UPDATE recipes SET title = $1, image = $2, type = $3, time = $4, difficulty = $5 WHERE id = $6 RETURNING *',
+      [title, image || '', type, time, difficulty, id]
+    );
+    
+    if (recipeResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Recipe not found' });
+    }
+    
+    // Delete old ingredients and steps
+    await client.query('DELETE FROM recipe_ingredients WHERE recipe_id = $1', [id]);
+    await client.query('DELETE FROM recipe_steps WHERE recipe_id = $1', [id]);
+    
+    // Insert new available ingredients
+    for (const ingredient of availableIngredients || []) {
+      await client.query(
+        'INSERT INTO recipe_ingredients (recipe_id, ingredient_name, is_available) VALUES ($1, $2, $3)',
+        [id, ingredient, true]
+      );
+    }
+    
+    // Insert new missing ingredients
+    for (const ingredient of missingIngredients || []) {
+      await client.query(
+        'INSERT INTO recipe_ingredients (recipe_id, ingredient_name, is_available) VALUES ($1, $2, $3)',
+        [id, ingredient, false]
+      );
+    }
+    
+    // Insert new steps
+    for (let i = 0; i < (steps || []).length; i++) {
+      await client.query(
+        'INSERT INTO recipe_steps (recipe_id, step_number, description) VALUES ($1, $2, $3)',
+        [id, i + 1, steps[i]]
+      );
+    }
+    
+    await client.query('COMMIT');
+    res.json(recipeResult.rows[0]);
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  } finally {
+    client.release();
+  }
+});
+
 // DELETE recipe
 app.delete('/api/recipes/:id', async (req, res) => {
   try {
