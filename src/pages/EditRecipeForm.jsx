@@ -1,25 +1,8 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { ArrowLeft, Plus, X } from "lucide-react";
 
-// Mock context for demonstration
-const RecipeContext = {
-  recipes: [
-    {
-      id: 1,
-      title: 'Soupe de Légumes',
-      type: 'Plat principal',
-      time: '30 min',
-      difficulty: 'Facile',
-      image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=500&h=300&fit=crop',
-      availableIngredients: ['Carottes', 'Pommes de terre', 'Oignons'],
-      missingIngredients: ['Poireaux', 'Bouillon de légumes'],
-      steps: ['Épluchez les légumes', 'Faites cuire']
-    }
-  ]
-};
-
-export default function EditRecipe() {
-  const [recipeId] = useState(1);
+function EditRecipeForm({ recipeId, onBack }) {
+  const { getRecipe, updateRecipe } = useRecipes();
   const [form, setForm] = useState({
     title: "",
     type: "",
@@ -30,19 +13,18 @@ export default function EditRecipe() {
     missingIngredients: [],
     steps: []
   });
-
   const [currentIngredient, setCurrentIngredient] = useState("");
   const [currentMissingIngredient, setCurrentMissingIngredient] = useState("");
   const [currentStep, setCurrentStep] = useState("");
 
   useEffect(() => {
     if (recipeId) {
-      const recipe = RecipeContext.recipes.find(r => r.id === recipeId);
+      const recipe = getRecipe(recipeId);
       if (recipe) {
         setForm(recipe);
       }
     }
-  }, [recipeId]);
+  }, [recipeId, getRecipe]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -103,31 +85,26 @@ export default function EditRecipe() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (form.title && form.type && form.time && form.difficulty) {
+      updateRecipe(recipeId, form);
       alert(`Recette modifiée : ${form.title}`);
-      // updateRecipe(recipeId, form);
-      // onBack();
+      onBack();
     } else {
       alert("Veuillez remplir tous les champs obligatoires");
     }
   };
 
-  const onBack = () => {
-    alert("Retour à la liste");
-  };
-
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
-      <button 
+      <button
         onClick={onBack}
         className="flex items-center gap-2 text-green-600 hover:text-green-700 font-medium mb-6"
       >
         <ArrowLeft size={20} />
         Retour aux recettes
       </button>
-
       <div className="bg-white shadow-md rounded-2xl p-8">
         <h2 className="text-3xl font-bold mb-6 text-gray-800">Modifier la recette</h2>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -142,7 +119,6 @@ export default function EditRecipe() {
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
               />
             </div>
-
             <div>
               <label className="block text-gray-700 mb-2 font-medium">Type de plat *</label>
               <select
@@ -159,7 +135,6 @@ export default function EditRecipe() {
                 <option value="Accompagnement">Accompagnement</option>
               </select>
             </div>
-
             <div>
               <label className="block text-gray-700 mb-2 font-medium">Temps de préparation *</label>
               <input
@@ -172,7 +147,6 @@ export default function EditRecipe() {
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
               />
             </div>
-
             <div>
               <label className="block text-gray-700 mb-2 font-medium">Difficulté *</label>
               <select
@@ -189,7 +163,6 @@ export default function EditRecipe() {
               </select>
             </div>
           </div>
-
           <div>
             <label className="block text-gray-700 mb-2 font-medium">URL de l'image</label>
             <input
@@ -201,7 +174,6 @@ export default function EditRecipe() {
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
             />
           </div>
-
           <div>
             <label className="block text-gray-700 mb-2 font-medium">Ingrédients disponibles</label>
             <div className="flex gap-2 mb-3">
@@ -236,7 +208,6 @@ export default function EditRecipe() {
               ))}
             </div>
           </div>
-
           <div>
             <label className="block text-gray-700 mb-2 font-medium">Ingrédients manquants (optionnel)</label>
             <div className="flex gap-2 mb-3">
@@ -271,7 +242,6 @@ export default function EditRecipe() {
               ))}
             </div>
           </div>
-
           <div>
             <label className="block text-gray-700 mb-2 font-medium">Étapes de préparation</label>
             <div className="flex gap-2 mb-3">
@@ -308,7 +278,6 @@ export default function EditRecipe() {
               ))}
             </div>
           </div>
-
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <button
               type="submit"

@@ -1,8 +1,7 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { ArrowLeft, Plus, X } from "lucide-react";
-import { useRecipes } from "../context/RecipeContext";
 
-export default function AddRecipe({ onBack }) {
+function AddRecipeForm({ onBack }) {
   const { addRecipe } = useRecipes();
   const [form, setForm] = useState({
     title: "",
@@ -14,7 +13,6 @@ export default function AddRecipe({ onBack }) {
     missingIngredients: [],
     steps: []
   });
-
   const [currentIngredient, setCurrentIngredient] = useState("");
   const [currentMissingIngredient, setCurrentMissingIngredient] = useState("");
   const [currentStep, setCurrentStep] = useState("");
@@ -88,19 +86,17 @@ export default function AddRecipe({ onBack }) {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
-      <button 
+      <button
         onClick={onBack}
         className="flex items-center gap-2 text-green-600 hover:text-green-700 font-medium mb-6"
       >
         <ArrowLeft size={20} />
         Retour aux recettes
       </button>
-
       <div className="bg-white shadow-md rounded-2xl p-8">
         <h2 className="text-3xl font-bold mb-6 text-gray-800">Ajouter une recette</h2>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Informations de base */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-gray-700 mb-2 font-medium">Titre de la recette *</label>
@@ -114,7 +110,6 @@ export default function AddRecipe({ onBack }) {
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
               />
             </div>
-
             <div>
               <label className="block text-gray-700 mb-2 font-medium">Type de plat *</label>
               <select
@@ -131,7 +126,6 @@ export default function AddRecipe({ onBack }) {
                 <option value="Accompagnement">Accompagnement</option>
               </select>
             </div>
-
             <div>
               <label className="block text-gray-700 mb-2 font-medium">Temps de préparation *</label>
               <input
@@ -144,7 +138,6 @@ export default function AddRecipe({ onBack }) {
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
               />
             </div>
-
             <div>
               <label className="block text-gray-700 mb-2 font-medium">Difficulté *</label>
               <select
@@ -161,8 +154,6 @@ export default function AddRecipe({ onBack }) {
               </select>
             </div>
           </div>
-
-          {/* Image URL */}
           <div>
             <label className="block text-gray-700 mb-2 font-medium">URL de l'image</label>
             <input
@@ -174,8 +165,6 @@ export default function AddRecipe({ onBack }) {
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
             />
           </div>
-
-          {/* Ingrédients disponibles */}
           <div>
             <label className="block text-gray-700 mb-2 font-medium">Ingrédients disponibles</label>
             <div className="flex gap-2 mb-3">
@@ -210,8 +199,6 @@ export default function AddRecipe({ onBack }) {
               ))}
             </div>
           </div>
-
-          {/* Ingrédients manquants */}
           <div>
             <label className="block text-gray-700 mb-2 font-medium">Ingrédients manquants (optionnel)</label>
             <div className="flex gap-2 mb-3">
@@ -246,8 +233,6 @@ export default function AddRecipe({ onBack }) {
               ))}
             </div>
           </div>
-
-          {/* Étapes de préparation */}
           <div>
             <label className="block text-gray-700 mb-2 font-medium">Étapes de préparation</label>
             <div className="flex gap-2 mb-3">
@@ -284,8 +269,6 @@ export default function AddRecipe({ onBack }) {
               ))}
             </div>
           </div>
-
-          {/* Boutons de soumission */}
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <button
               type="submit"
