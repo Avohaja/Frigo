@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Clock, Edit2, Trash2 } from 'lucide-react';
-import { useRecipes } from './RecipeContext';
+import { useRecipes } from '../../context/RecipeContext';
 
 function RecipeDetail({ recipeId, onBack, onEdit }) {
   const { getRecipe, deleteRecipe } = useRecipes();
