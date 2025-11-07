@@ -1,0 +1,221 @@
+{
+  "products": [
+    {
+      "id": "p1",
+      "name": "Œufs",
+      "quantity": 1,
+      "datePeremption": "2025-10-18",
+      "categorie": "laitier",
+      "status": "fresh"
+    },
+    {
+      "id": "p2",
+      "name": "Lait demi-écrémé",
+      "quantity": 1,
+      "datePeremption": "2025-10-17",
+      "categorie": "laitier",
+      "status": "fresh"
+    },
+    {
+      "id": "p3",
+      "name": "Beurre doux",
+      "quantity": 2,
+      "datePeremption": "2025-11-05",
+      "categorie": "laitier",
+      "status": "fresh"
+    },
+    {
+      "id": "p4",
+      "name": "Poulet",
+      "quantity": 1,
+      "datePeremption": "2025-10-16",
+      "categorie": "viande",
+      "status": "fresh"
+    },
+    {
+      "id": "p5",
+      "name": "Carottes",
+      "quantity": 5,
+      "datePeremption": "2025-10-25",
+      "categorie": "légume",
+      "status": "fresh"
+    },
+    {
+      "id": "p6",
+      "name": "Pommes de terre",
+      "quantity": 6,
+      "datePeremption": "2025-11-10",
+      "categorie": "légume",
+      "status": "fresh"
+    },
+    {
+      "id": "p7",
+      "name": "Yaourt nature",
+      "quantity": 4,
+      "datePeremption": "2025-10-19",
+      "categorie": "laitier",
+      "status": "fresh"
+    },
+    {
+      "id": "p8",
+      "name": "Tomates",
+      "quantity": 3,
+      "datePeremption": "2025-10-17",
+      "categorie": "légume",
+      "status": "fresh"
+    },
+    {
+      "id": "p9",
+      "name": "Fromage râpé",
+      "quantity": 1,
+      "datePeremption": "2025-10-30",
+      "categorie": "laitier",
+      "status": "fresh"
+    },
+    {
+      "id": "p10",
+      "name": "Jambon blanc",
+      "quantity": 2,
+      "datePeremption": "2025-10-16",
+      "categorie": "charcuterie",
+      "status": "fresh"
+    }
+  ],
+  "history": [
+    {
+      "id": "p1",
+      "name": "Œufs",
+      "quantityUsed": 2,
+      "date": "2025-10-12"
+    },
+    {
+      "id": "p2",
+      "name": "Lait demi-écrémé",
+      "quantityUsed": 1,
+      "date": "2025-10-10"
+    },
+    {
+      "id": "p5",
+      "name": "Carottes",
+      "quantityUsed": 3,
+      "date": "2025-10-09"
+    },
+    {
+      "id": "p7",
+      "name": "Yaourt nature",
+      "quantityUsed": 2,
+      "date": "2025-10-11"
+    },
+    {
+      "id": "p1",
+      "name": "Œufs",
+      "quantityUsed": 3,
+      "date": "2025-10-08"
+    },
+    {
+      "id": "p10",
+      "name": "Jambon blanc",
+      "quantityUsed": 1,
+      "date": "2025-10-07"
+    },
+    {
+      "id": "p4",
+      "name": "Poulet",
+      "quantityUsed": 1,
+      "date": "2025-10-06"
+    },
+    {
+      "id": "p8",
+      "name": "Tomates",
+      "quantityUsed": 2,
+      "date": "2025-10-10"
+    },
+    {
+      "id": "p1",
+      "name": "Œufs",
+      "quantityUsed": 1,
+      "date": "2025-10-21T04:13:20.200Z"
+    },
+    {
+      "id": "p1",
+      "name": "Œufs",
+      "quantityUsed": 1,
+      "date": "2025-10-21T04:13:20.609Z"
+    },
+    {
+      "id": "p1",
+      "name": "Œufs",
+      "quantityUsed": 1,
+      "date": "2025-10-21T04:13:20.752Z"
+    },
+    {
+      "id": "p1",
+      "name": "Œufs",
+      "quantityUsed": 1,
+      "date": "2025-10-21T04:13:44.830Z"
+    },
+    {
+      "id": "p1",
+      "name": "Œufs",
+      "quantityUsed": 1,
+      "date": "2025-10-21T04:14:10.286Z"
+    },
+    {
+      "id": "p1",
+      "name": "Œufs",
+      "quantityUsed": 1,
+      "date": "2025-10-21T04:14:10.434Z"
+    },
+    {
+      "id": "p1",
+      "name": "Œufs",
+      "quantityUsed": 1,
+      "date": "2025-10-21T04:14:10.571Z"
+    }
+  ],
+  "recipes": [
+    {
+      "id": "r1",
+      "name": "Omelette nature",
+      "ingredients": [
+        "Œufs",
+        "Beurre doux",
+        "Lait demi-écrémé"
+      ]
+    },
+    {
+      "id": "r2",
+      "name": "Poulet rôti aux carottes",
+      "ingredients": [
+        "Poulet",
+        "Carottes",
+        "Beurre doux"
+      ]
+    },
+    {
+      "id": "r3",
+      "name": "Gratin dauphinois",
+      "ingredients": [
+        "Pommes de terre",
+        "Lait demi-écrémé",
+        "Fromage râpé"
+      ]
+    },
+    {
+      "id": "r4",
+      "name": "Salade de tomates au jambon",
+      "ingredients": [
+        "Tomates",
+        "Jambon blanc"
+      ]
+    },
+    {
+      "id": "r5",
+      "name": "Yaourt fruité maison",
+      "ingredients": [
+        "Yaourt nature",
+        "Lait demi-écrémé"
+      ]
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import { createContext, useState, useContext, useEffect } from 'react';
 
 const ProductContext = createContext();
 const API_URL = 'http://localhost:5000/api';
+const JSON_URL = 'http://localhost:5001';
 
 export const useProducts = () => {
   const context = useContext(ProductContext);

@@ -1,0 +1,335 @@
+{
+  "products": [
+    {
+      "id": "3",
+      "name": "milk",
+      "category": "Produits laitiers",
+      "expiration": "2025-11-20",
+      "quantity": 1,
+      "status": "low",
+      "created_at": "2025-11-05T13:22:24.460675"
+    },
+    {
+      "id": "4",
+      "name": "Pêche",
+      "category": "Fruits & Légumes",
+      "expiration": "2025-11-06",
+      "quantity": 6,
+      "status": "expiring",
+      "created_at": "2025-11-05T14:46:05.188869"
+    }
+  ],
+  "recipes": [
+    {
+      "id": "1",
+      "title": "Soupe de Légumes",
+      "image": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=500&h=300&fit=crop",
+      "type": "Plat principal",
+      "time": "30 min",
+      "difficulty": "Facile",
+      "created_at": "2025-11-06T08:15:37.312579",
+      "updated_at": "2025-11-06T08:15:37.312579"
+    },
+    {
+      "id": "2",
+      "title": "Salade de Quinoa et Légumes",
+      "image": "https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?w=500&h=300&fit=crop",
+      "type": "Entrée",
+      "time": "25 min",
+      "difficulty": "Facile",
+      "created_at": "2025-11-06T08:15:37.312579",
+      "updated_at": "2025-11-06T08:15:37.312579"
+    },
+    {
+      "id": "3",
+      "title": "Quiche Lorraine",
+      "image": "https://images.unsplash.com/photo-1476124369491-b79d2aedb8f6?w=500&h=300&fit=crop",
+      "type": "Plat principal",
+      "time": "45 min",
+      "difficulty": "Moyen",
+      "created_at": "2025-11-06T08:15:37.312579",
+      "updated_at": "2025-11-06T08:15:37.312579"
+    },
+    {
+      "id": "4",
+      "title": "Omelette aux champignons",
+      "image": "https://images.unsplash.com/photo-1612874742237-6526221588e3?w=500&h=300&fit=crop",
+      "type": "Plat principal",
+      "time": "10 min",
+      "difficulty": "Facile",
+      "created_at": "2025-11-06T08:15:37.312579",
+      "updated_at": "2025-11-06T08:15:37.312579"
+    },
+    {
+      "id": "5",
+      "title": "tarte aux pommes",
+      "image": "https://somewhere.io",
+      "type": "Dessert",
+      "time": "25",
+      "difficulty": "Moyen",
+      "created_at": "2025-11-06T08:17:05.104721",
+      "updated_at": "2025-11-06T08:17:05.104721"
+    },
+    {
+      "id": "1045",
+      "title": "gâteau",
+      "type": "Dessert",
+      "time": "40",
+      "difficulty": "Moyen",
+      "image": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=500&h=300&fit=crop",
+      "availableIngredients": [],
+      "missingIngredients": [],
+      "steps": []
+    }
+  ],
+  "recipe_ingredients": [
+    {
+      "id": "1",
+      "recipe_id": 1,
+      "ingredient_name": "Carottes",
+      "is_available": true
+    },
+    {
+      "id": "2",
+      "recipe_id": 1,
+      "ingredient_name": "Pommes de terre",
+      "is_available": true
+    },
+    {
+      "id": "3",
+      "recipe_id": 1,
+      "ingredient_name": "Oignons",
+      "is_available": true
+    },
+    {
+      "id": "4",
+      "recipe_id": 1,
+      "ingredient_name": "Poireaux",
+      "is_available": false
+    },
+    {
+      "id": "5",
+      "recipe_id": 1,
+      "ingredient_name": "Bouillon de légumes",
+      "is_available": false
+    },
+    {
+      "id": "6",
+      "recipe_id": 2,
+      "ingredient_name": "Quinoa",
+      "is_available": true
+    },
+    {
+      "id": "7",
+      "recipe_id": 2,
+      "ingredient_name": "Concombre",
+      "is_available": true
+    },
+    {
+      "id": "8",
+      "recipe_id": 2,
+      "ingredient_name": "Tomates",
+      "is_available": true
+    },
+    {
+      "id": "9",
+      "recipe_id": 2,
+      "ingredient_name": "Poivron",
+      "is_available": false
+    },
+    {
+      "id": "10",
+      "recipe_id": 2,
+      "ingredient_name": "Vinaigrette citron",
+      "is_available": false
+    },
+    {
+      "id": "11",
+      "recipe_id": 3,
+      "ingredient_name": "Pâte brisée",
+      "is_available": true
+    },
+    {
+      "id": "12",
+      "recipe_id": 3,
+      "ingredient_name": "Lardons",
+      "is_available": true
+    },
+    {
+      "id": "13",
+      "recipe_id": 3,
+      "ingredient_name": "Œufs",
+      "is_available": true
+    },
+    {
+      "id": "14",
+      "recipe_id": 3,
+      "ingredient_name": "Crème",
+      "is_available": true
+    },
+    {
+      "id": "15",
+      "recipe_id": 4,
+      "ingredient_name": "Œufs",
+      "is_available": true
+    },
+    {
+      "id": "16",
+      "recipe_id": 4,
+      "ingredient_name": "Champignons",
+      "is_available": true
+    },
+    {
+      "id": "17",
+      "recipe_id": 4,
+      "ingredient_name": "Fromage râpé",
+      "is_available": false
+    }
+  ],
+  "recipe_steps": [
+    {
+      "id": "1",
+      "recipe_id": 1,
+      "step_number": 1,
+      "description": "Épluchez et coupez tous les légumes en morceaux de taille égale."
+    },
+    {
+      "id": "2",
+      "recipe_id": 1,
+      "step_number": 2,
+      "description": "Dans une grande casserole, faites revenir l'oignon émincé dans un peu d'huile d'olive jusqu'à ce qu'il soit translucide."
+    },
+    {
+      "id": "3",
+      "recipe_id": 1,
+      "step_number": 3,
+      "description": "Ajoutez les carottes, les pommes de terre et les poireaux. Faites-les revenir pendant 5 minutes."
+    },
+    {
+      "id": "4",
+      "recipe_id": 1,
+      "step_number": 4,
+      "description": "Versez le bouillon de légumes jusqu'à couvrir les légumes. Portez à ébullition, puis baissez le feu et laissez mijoter pendant 20 minutes."
+    },
+    {
+      "id": "5",
+      "recipe_id": 1,
+      "step_number": 5,
+      "description": "Mixez la soupe à l'aide d'un mixeur plongeant jusqu'à obtenir une consistance lisse."
+    },
+    {
+      "id": "6",
+      "recipe_id": 1,
+      "step_number": 6,
+      "description": "Salez, poivrez et servez chaud."
+    },
+    {
+      "id": "7",
+      "recipe_id": 2,
+      "step_number": 1,
+      "description": "Rincez le quinoa à l'eau froide."
+    },
+    {
+      "id": "8",
+      "recipe_id": 2,
+      "step_number": 2,
+      "description": "Faites cuire le quinoa dans de l'eau bouillante pendant 15 minutes."
+    },
+    {
+      "id": "9",
+      "recipe_id": 2,
+      "step_number": 3,
+      "description": "Coupez les légumes en petits dés."
+    },
+    {
+      "id": "10",
+      "recipe_id": 2,
+      "step_number": 4,
+      "description": "Mélangez le quinoa refroidi avec les légumes."
+    },
+    {
+      "id": "11",
+      "recipe_id": 2,
+      "step_number": 5,
+      "description": "Ajoutez la vinaigrette et mélangez bien."
+    },
+    {
+      "id": "12",
+      "recipe_id": 2,
+      "step_number": 6,
+      "description": "Servez frais."
+    },
+    {
+      "id": "13",
+      "recipe_id": 3,
+      "step_number": 1,
+      "description": "Préchauffez le four à 180°C."
+    },
+    {
+      "id": "14",
+      "recipe_id": 3,
+      "step_number": 2,
+      "description": "Étalez la pâte brisée dans un moule à tarte."
+    },
+    {
+      "id": "15",
+      "recipe_id": 3,
+      "step_number": 3,
+      "description": "Faites revenir les lardons dans une poêle."
+    },
+    {
+      "id": "16",
+      "recipe_id": 3,
+      "step_number": 4,
+      "description": "Battez les œufs avec la crème fraîche."
+    },
+    {
+      "id": "17",
+      "recipe_id": 3,
+      "step_number": 5,
+      "description": "Répartissez les lardons sur la pâte et versez le mélange œufs-crème."
+    },
+    {
+      "id": "18",
+      "recipe_id": 3,
+      "step_number": 6,
+      "description": "Enfournez pour 35-40 minutes jusqu'à ce que la quiche soit dorée."
+    },
+    {
+      "id": "19",
+      "recipe_id": 4,
+      "step_number": 1,
+      "description": "Émincez les champignons."
+    },
+    {
+      "id": "20",
+      "recipe_id": 4,
+      "step_number": 2,
+      "description": "Faites revenir les champignons dans une poêle avec un peu de beurre."
+    },
+    {
+      "id": "21",
+      "recipe_id": 4,
+      "step_number": 3,
+      "description": "Battez les œufs dans un bol."
+    },
+    {
+      "id": "22",
+      "recipe_id": 4,
+      "step_number": 4,
+      "description": "Versez les œufs dans la poêle avec les champignons."
+    },
+    {
+      "id": "23",
+      "recipe_id": 4,
+      "step_number": 5,
+      "description": "Laissez cuire quelques minutes en remuant délicatement."
+    },
+    {
+      "id": "24",
+      "recipe_id": 4,
+      "step_number": 6,
+      "description": "Servez chaud avec du fromage râpé."
+    }
+  ]
+}

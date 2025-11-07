@@ -2,6 +2,7 @@ import { createContext, useState, useContext, useEffect } from 'react';
 
 const RecipeContext = createContext();
 const API_URL = 'http://localhost:5000/api';
+const JSON_URL = 'http://localhost:5001';
 
 export const useRecipes = () => {
   const context = useContext(RecipeContext);
@@ -34,6 +35,21 @@ export const RecipeProvider = ({ children }) => {
   };
 
   const addRecipe = async (recipe) => {
+    //ajout dans le fichier json local
+    try {
+      const res = await fetch(`${JSON_URL}/recipes`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(recipe)
+      });
+
+      const saved = await res.json();
+      console.log("Recette ajoutée dans le fichier json : ", saved);
+    } catch (err) {
+      console.log("Ërreur lors de l'ajout de la recette dans le fichier json : ", err)
+    };
+
+    //ajout dans la base de données
     try {
       const response = await fetch(`${API_URL}/recipes`, {
         method: 'POST',
