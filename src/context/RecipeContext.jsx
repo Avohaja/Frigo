@@ -60,7 +60,9 @@ export const RecipeProvider = ({ children }) => {
         body: JSON.stringify(updatedRecipe)
       });
       const updated = await response.json();
+      console.log(updated);
       setRecipes(recipes.map(r => r.id === id ? updated : r));
+      console.log(recipes);
       return updated;
     } catch (error) {
       console.error('Error updating recipe:', error);
@@ -108,6 +110,10 @@ export const RecipeProvider = ({ children }) => {
     return recipes.find(r => r.id === id);
   };
 
+  const appendRecipe = (recipe) => {
+    setRecipes(prevRecipes => [...prevRecipes, recipe]);
+  }
+
   // Obtenir les ingrédients manquants des recettes utilisées
   const getUsedRecipesMissingIngredients = () => {
     const usedRecipes = recipes.filter(r => r.isUsed);
@@ -139,7 +145,8 @@ export const RecipeProvider = ({ children }) => {
       getRecipe,
       fetchRecipes,
       toggleRecipeUsage,
-      getUsedRecipesMissingIngredients
+      getUsedRecipesMissingIngredients,
+      appendRecipe
     }}>
       {children}
     </RecipeContext.Provider>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Settings, BarChart3, Menu, X, Home, Package, BookOpen, ShoppingCart } from "lucide-react";
+import { Bell, Settings, BarChart3, Menu, X, Home, Package, BookOpen, ShoppingCart, MessageCircle } from "lucide-react";
 import { ProductProvider } from './context/ProductContext';
 import Inventory from "./pages/Product/Inventory";
 import Recipes from "./pages/Recipe/Recipes";
@@ -10,29 +10,36 @@ import SettingsPage from "./pages/Settings";
 import AddProduct from "./pages/Product/AddProduct";
 import EditProduct from "./pages/Product/EditProduct";
 import Dashboard from "./pages/Dashboard";
+import { ShoppingProvider } from "./context/ShoppingContext";
 
 function App() {
   const [page, setPage] = useState("Dashboard");
   const [editingProductId, setEditingProductId] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleEditProduct = (id) => {
-    setEditingProductId(id);
-    setPage("editProduct");
+  const navigateTo = (pageName) => {
+    setPage(pageName);
     setMobileMenuOpen(false);
   };
 
-  const handleNavigation = (newPage) => {
-    setPage(newPage);
-    setMobileMenuOpen(false);
+  const handleEditProduct = (id) => {
+    setEditingProductId(id);
+    navigateTo("editProduct");
   };
 
   const renderPage = () => {
     switch (page) {
       case "Dashboard":
-        return <Dashboard />;
+        return (
+          <Dashboard
+          onViewAllProducts={() => navigateTo("inventory")}
+          onViewAllRecipes={() => navigateTo("recipes")}
+          onViewShoppingList={() => navigateTo("shopping")}
+          onViewStatistics={() => navigateTo("statistics")}
+          />
+        );
       case "inventory":
-        return <Inventory onAddProduct={() => setPage("addProduct")} onEditProduct={handleEditProduct} />;
+        return <Inventory onAddProduct={() => navigateTo("addProduct")} onEditProduct={handleEditProduct} />;
       case "recipes":
         return <Recipes />;
       case "shopping":
@@ -44,9 +51,9 @@ function App() {
       case "settings":
         return <SettingsPage />;
       case "addProduct":
-        return <AddProduct onBack={() => setPage("inventory")} />;
+        return <AddProduct onBack={() => navigateTo("inventory")} />;
       case "editProduct":
-        return <EditProduct productId={editingProductId} onBack={() => setPage("inventory")} />;
+        return <EditProduct productId={editingProductId} onBack={() => navigateTo("inventory")} />;
       default:
         return <Dashboard />;
     }
@@ -60,13 +67,12 @@ function App() {
   ];
 
   return (
+    <ShoppingProvider>
     <ProductProvider>
       <div className="min-h-screen bg-gray-50">
-        {/* Navbar */}
         <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
-              {/* Logo */}
               <div className="flex items-center">
                 <h1 className="text-xl sm:text-2xl font-bold text-green-600 flex items-center gap-2">
                   <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
@@ -75,14 +81,13 @@ function App() {
                   <span className="hidden sm:inline">SmartChill</span>
                 </h1>
               </div>
-              {/* Desktop Navigation */}
               <nav className="hidden md:flex items-center gap-1">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   return (
                     <button
                       key={item.id}
-                      onClick={() => handleNavigation(item.id)}
+                      onClick={() => navigateTo(item.id)}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                         page === item.id
                           ? "bg-green-50 text-green-600"
@@ -95,12 +100,10 @@ function App() {
                   );
                 })}
               </nav>
-              {/* Right side icons */}
               <div className="flex items-center gap-2">
-                {/* Desktop action buttons */}
                 <div className="hidden sm:flex items-center gap-2">
                   <button
-                    onClick={() => handleNavigation("notifications")}
+                    onClick={() => navigateTo("notifications")}
                     className={`relative p-2 rounded-lg transition-colors ${
                       page === "notifications"
                         ? "bg-green-100 text-green-600"
@@ -111,7 +114,7 @@ function App() {
                     <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                   </button>
                   <button
-                    onClick={() => handleNavigation("statistics")}
+                    onClick={() => navigateTo("statistics")}
                     className={`p-2 rounded-lg transition-colors ${
                       page === "statistics"
                         ? "bg-green-100 text-green-600"
@@ -121,7 +124,7 @@ function App() {
                     <BarChart3 size={20} />
                   </button>
                   <button
-                    onClick={() => handleNavigation("settings")}
+                    onClick={() => navigateTo("settings")}
                     className={`p-2 rounded-lg transition-colors ${
                       page === "settings"
                         ? "bg-green-100 text-green-600"
@@ -131,7 +134,6 @@ function App() {
                     <Settings size={20} />
                   </button>
                 </div>
-                {/* Mobile menu button */}
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                   className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100"
@@ -141,7 +143,6 @@ function App() {
               </div>
             </div>
           </div>
-          {/* Mobile Navigation Menu */}
           {mobileMenuOpen && (
             <div className="md:hidden border-t border-gray-200 bg-white">
               <div className="px-4 py-3 space-y-1">
@@ -150,7 +151,7 @@ function App() {
                   return (
                     <button
                       key={item.id}
-                      onClick={() => handleNavigation(item.id)}
+                      onClick={() => navigateTo(item.id)}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition-colors ${
                         page === item.id
                           ? "bg-green-50 text-green-600"
@@ -162,10 +163,9 @@ function App() {
                     </button>
                   );
                 })}
-                {/* Mobile action items */}
                 <div className="pt-3 mt-3 border-t border-gray-200 space-y-1">
                   <button
-                    onClick={() => handleNavigation("notifications")}
+                    onClick={() => navigateTo("notifications")}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition-colors ${
                       page === "notifications"
                         ? "bg-green-50 text-green-600"
@@ -177,7 +177,7 @@ function App() {
                     <span className="ml-auto w-2 h-2 bg-red-500 rounded-full"></span>
                   </button>
                   <button
-                    onClick={() => handleNavigation("statistics")}
+                    onClick={() => navigateTo("statistics")}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition-colors ${
                       page === "statistics"
                         ? "bg-green-50 text-green-600"
@@ -188,7 +188,7 @@ function App() {
                     <span>Statistiques</span>
                   </button>
                   <button
-                    onClick={() => handleNavigation("settings")}
+                    onClick={() => navigateTo("settings")}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition-colors ${
                       page === "settings"
                         ? "bg-green-50 text-green-600"
@@ -203,12 +203,12 @@ function App() {
             </div>
           )}
         </header>
-        {/* Main Content */}
         <main className="min-h-[calc(100vh-4rem)]">
           {renderPage()}
         </main>
       </div>
     </ProductProvider>
+      </ShoppingProvider>
   );
 }
 

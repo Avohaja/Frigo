@@ -18,7 +18,10 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
       expired: { label: 'Périmé', color: 'bg-red-100 text-red-700', dot: 'bg-red-500' },
       low: { label: 'Stock faible', color: 'bg-orange-100 text-orange-700', dot: 'bg-orange-500' }
     };
-    return configs[status];
+    if (!configs[status]) {
+      console.warn(`Invalid status: ${status}, defaulting to 'fresh'`);
+    }
+    return configs[status] || configs.fresh;
   };
 
   const formatDate = (dateString) => {
@@ -29,11 +32,17 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
   const categories = ['all', ...new Set(products.map(p => p.category))];
 
   const getFilteredAndSortedProducts = () => {
-    let filtered = products.filter(p => {
-      const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = filterCategory === 'all' || p.category === filterCategory;
-      return matchesSearch && matchesCategory;
-    });
+    let filtered = products
+      .filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCategory = filterCategory === 'all' || p.category === filterCategory;
+        return matchesSearch && matchesCategory;
+      })
+      .map(p => ({
+        ...p,
+        status: p.status || 'fresh' // Default to 'fresh' if status is missing
+      }));
+
     const sorted = [...filtered].sort((a, b) => {
       switch (sortBy) {
         case 'name':
@@ -69,14 +78,13 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
   };
 
   return (
-    <div className=" bg-gray-50">
+    <div className="bg-gray-50">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Page Title */}
         <div className="mb-6">
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Inventaire</h2>
           <p className="text-gray-600 text-sm sm:text-base">Gérez vos produits et réduisez le gaspillage.</p>
         </div>
-
         {/* Search and Actions Bar - Responsive */}
         <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-3">
           <div className="w-full sm:flex-1 sm:max-w-md relative">
@@ -89,7 +97,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
             />
           </div>
-
           {/* Filters and Sort - Stacked on mobile */}
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <div className="flex gap-2">
@@ -126,7 +133,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
                   </div>
                 )}
               </div>
-
               {/* Sort Dropdown - Responsive */}
               <div className="relative w-full sm:w-auto">
                 <button
@@ -213,7 +219,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
                 )}
               </div>
             </div>
-
             {/* Add Product Button - Responsive */}
             <button
               onClick={onAddProduct}
@@ -224,7 +229,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
             </button>
           </div>
         </div>
-
         {/* Table - Responsive */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
@@ -289,7 +293,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
             </table>
           </div>
         </div>
-
         {/* Results count - Responsive */}
         <div className="mt-3 text-xs sm:text-sm text-gray-600">
           {getFilteredAndSortedProducts().length} produit(s) affiché(s) sur {products.length} total

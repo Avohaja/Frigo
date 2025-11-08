@@ -69,6 +69,7 @@ app.put('/api/products/:id', async (req, res) => {
       'UPDATE products SET name = $1, category = $2, expiration = $3, quantity = $4, status = $5 WHERE id = $6 RETURNING *',
       [name, category, expiration, quantity, status, id]
     );
+    console.log(result.rows[0]);
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -220,6 +221,7 @@ app.put('/api/recipes/:id', async (req, res) => {
     }
     
     await client.query('COMMIT');
+    console.log(recipeResult.rows[0]);
     res.json(recipeResult.rows[0]);
   } catch (err) {
     await client.query('ROLLBACK');
