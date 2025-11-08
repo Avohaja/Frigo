@@ -15,7 +15,6 @@ export const RecipeProvider = ({ children }) => {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch recipes from API on mount
   useEffect(() => {
     fetchRecipes();
   }, []);
@@ -38,11 +37,9 @@ export const RecipeProvider = ({ children }) => {
       const response = await fetch(`${API_URL}/recipes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(recipe)
+        body: JSON.stringify({ ...recipe, isUsed: false }),
       });
       const newRecipe = await response.json();
-      
-      // Refetch recipes to ensure consistency
       await fetchRecipes();
       return newRecipe;
     } catch (error) {
@@ -56,11 +53,9 @@ export const RecipeProvider = ({ children }) => {
       const response = await fetch(`${API_URL}/recipes/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedRecipe)
+        body: JSON.stringify(updatedRecipe),
       });
       const updated = await response.json();
-      
-      // Refetch recipes to ensure consistency
       await fetchRecipes();
       return updated;
     } catch (error) {
@@ -71,11 +66,9 @@ export const RecipeProvider = ({ children }) => {
 
   const deleteRecipe = async (id) => {
     try {
-      await fetch(`${API_URL}/recipes/${id}`, { 
-        method: 'DELETE' 
+      await fetch(`${API_URL}/recipes/${id}`, {
+        method: 'DELETE',
       });
-      
-      // Refetch recipes to ensure consistency
       await fetchRecipes();
     } catch (error) {
       console.error('Error deleting recipe:', error);
@@ -84,19 +77,64 @@ export const RecipeProvider = ({ children }) => {
   };
 
   const getRecipe = (id) => {
-    return recipes.find(r => r.id === id);
+    return recipes.find((r) => r.id === id);
+  };
+
+  const toggleRecipeUsage = async (id) => {
+    try {
+      const response = await fetch(`${API_URL}/recipes/${id}/toggle`, {
+        method: 'PATCH',
+      });
+      const updated = await response.json();
+      await fetchRecipes();
+      return updated;
+    } catch (error) {
+      console.error('Error toggling recipe usage:', error);
+      throw error;
+    }
+  };
+
+  const getUsedRecipesMissingIngredients = () => {
+    const usedRecipes = recipes.filter((r) => r.isUsed);
+    const allMissingIngredients = [];
+
+    usedRecipes.forEach((recipe) => {
+      if (recipe.missingIngredients && recipe.missingIngredients.length > 0) {
+        recipe.missingIngredients.forEach((ingredient) => {
+          if (
+            !allMissingIngredients.some(
+              (item) => item.name.toLowerCase() === ingredient.name.toLowerCase()
+            )
+          ) {
+            allMissingIngredients.push({
+              id: `${recipe.id}-${ingredient.name}`,
+              name: ingredient.name,
+              quantity: ingredient.quantity || "Quantité non spécifiée",
+              recipeId: recipe.id,
+              recipeName: recipe.title
+            });
+          }
+        });
+      }
+    });
+
+    return allMissingIngredients;
   };
 
   return (
-    <RecipeContext.Provider value={{
-      recipes,
-      loading,
-      addRecipe,
-      updateRecipe,
-      deleteRecipe,
-      getRecipe,
-      fetchRecipes
-    }}>
+    <RecipeContext.Provider
+      value={{
+        recipes,
+        loading,
+        addRecipe,
+        updateRecipe,
+        deleteRecipe,
+        getRecipe,
+        fetchRecipes,
+        toggleRecipeUsage,
+        getUsedRecipesMissingIngredients,
+      }}
+    >
       {children}
     </RecipeContext.Provider>
   );

@@ -1,83 +1,36 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, X, ShoppingCart, Clock, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, X, ShoppingCart, AlertTriangle, Clock } from "lucide-react";
+import { useShoppingList } from '../context/ShoppingContext';
 
 export default function ShoppingList() {
   const [manualItem, setManualItem] = useState("");
   const [manualQuantity, setManualQuantity] = useState("");
-  const [scrollPosition, setScrollPosition] = useState(0);
+  const [scrollPosition, setScrollPosition] = useState({ missing: 0, unused: 0 });
+  const [shoppingList, setShoppingList] = useState([]);
 
-  // Suggestions basées sur les habitudes (exemple statique)
-  const suggestions = [
-    {
-      id: 1,
-      name: "Carottes",
-      quantity: "1 kg",
-      image: "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=300&h=300&fit=crop",
-      type: "habitual"
-    },
-    {
-      id: 2,
-      name: "Tomates",
-      quantity: "500 g",
-      image: "https://images.unsplash.com/photo-1546470427-227b2f7f5a8e?w=300&h=300&fit=crop",
-      type: "habitual"
-    },
-    {
-      id: 3,
-      name: "Pommes de terre",
-      quantity: "1 kg",
-      image: "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=300&h=300&fit=crop",
-      type: "habitual"
-    },
-    {
-      id: 4,
-      name: "Lait",
-      quantity: "1 L",
-      image: "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=300&h=300&fit=crop",
-      type: "habitual"
-    }
-  ];
+  const { getMissingIngredients } = useShoppingList();
+  const missingIngredients = getMissingIngredients();
 
-  // Ingrédients manquants (exemple statique)
-  const missingIngredients = [
-    {
-      id: 101,
-      name: "Oeufs",
-      quantity: "6",
-      image: "https://images.unsplash.com/photo-1582188721298-d920b4d8e529?w=300&h=300&fit=crop",
-      type: "missing"
-    },
-    {
-      id: 102,
-      name: "Farine",
-      quantity: "500 g",
-      image: "https://images.unsplash.com/photo-1604068549295-4332ad3d0d84?w=300&h=300&fit=crop",
-      type: "missing"
-    }
-  ];
-
-  // Produits non consommés depuis un certain temps (exemple statique)
+  // Produits non consommés (exemple statique, à remplacer par tes données réelles)
   const unusedProducts = [
     {
       id: 201,
       name: "Riz basmati",
       quantity: "1 kg",
       image: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=300&h=300&fit=crop",
-      type: "unused"
+      type: "unused",
     },
     {
       id: 202,
       name: "Lentilles",
       quantity: "500 g",
       image: "https://images.unsplash.com/photo-1603133872878-684f2b8bc379?w=300&h=300&fit=crop",
-      type: "unused"
-    }
+      type: "unused",
+    },
   ];
 
-  const [shoppingList, setShoppingList] = useState([]);
-
   const addToList = (item) => {
-    if (!shoppingList.find(i => i.id === item.id)) {
+    if (!shoppingList.find((i) => i.id === item.id)) {
       setShoppingList([...shoppingList, { ...item, added: true }]);
     }
   };
@@ -88,7 +41,7 @@ export default function ShoppingList() {
         id: Date.now(),
         name: manualItem,
         quantity: manualQuantity || "",
-        manual: true
+        manual: true,
       };
       setShoppingList([...shoppingList, newItem]);
       setManualItem("");
@@ -97,21 +50,20 @@ export default function ShoppingList() {
   };
 
   const removeFromList = (id) => {
-    setShoppingList(shoppingList.filter(item => item.id !== id));
+    setShoppingList(shoppingList.filter((item) => item.id !== id));
   };
 
-  const scrollLeft = () => {
-    setScrollPosition(scrollPosition - 300);
+  const scrollLeft = (section) => {
+    setScrollPosition((prev) => ({ ...prev, [section]: prev[section] - 340 }));
   };
 
-  const scrollRight = () => {
-    setScrollPosition(scrollPosition + 300);
+  const scrollRight = (section) => {
+    setScrollPosition((prev) => ({ ...prev, [section]: prev[section] + 340 }));
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 py-8">
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
@@ -125,10 +77,8 @@ export default function ShoppingList() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Suggestions & Add Manual */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Missing Ingredients Section */}
-            <div className="bg-white rounded-2xl shadow-md p-6">
+            <div className="bg-white rounded-3xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="text-yellow-500" size={24} />
@@ -136,52 +86,62 @@ export default function ShoppingList() {
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={scrollLeft}
+                    onClick={() => scrollLeft("missing")}
                     className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
                   >
                     <ChevronLeft size={20} className="text-gray-600" />
                   </button>
                   <button
-                    onClick={scrollRight}
+                    onClick={() => scrollRight("missing")}
                     className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
                   >
                     <ChevronRight size={20} className="text-gray-600" />
                   </button>
                 </div>
               </div>
-              <div className="overflow-x-auto flex gap-4 pb-4" style={{ scrollBehavior: 'smooth', transform: `translateX(-${scrollPosition}px)` }}>
-                {missingIngredients.map((item) => (
-                  <div key={item.id} className="min-w-[200px] bg-white rounded-xl border-2 border-yellow-200 overflow-hidden hover:border-yellow-300 hover:shadow-lg transition-all">
-                    <div className="relative h-40 bg-gradient-to-br from-yellow-50 to-yellow-100">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
+              {missingIngredients.length > 0 ? (
+                <div
+                  className="overflow-x-auto flex gap-4 pb-4"
+                  style={{ scrollBehavior: "smooth", transform: `translateX(-${scrollPosition.missing}px)` }}
+                >
+                  {missingIngredients.map((ingredient, index) => (
+                    <div
+                      key={ingredient.id}
+                      className="min-w-[320px] bg-yellow-50 rounded-3xl border-2 border-yellow-200 overflow-hidden hover:shadow-lg transition-all"
+                    >
+                      <div className="relative h-56 bg-yellow-100 rounded-t-3xl flex items-center justify-center">
+                        <img
+                          src={`https://via.placeholder.com/300?text=${encodeURIComponent(ingredient.name)}`}
+                          alt={ingredient.name}
+                          className="w-full h-full object-cover rounded-t-3xl"
+                        />
+                      </div>
+                      <div className="p-5 bg-white rounded-b-3xl">
+                        <h4 className="font-bold text-xl text-gray-900 mb-1">{ingredient.name}</h4>
+                        <p className="text-gray-600 mb-4">{ingredient.quantity}</p>
+                        <p className="text-sm text-gray-500 mb-4">Recette: {ingredient.recipeName}</p>
+                        <button
+                          onClick={() => addToList(ingredient)}
+                          disabled={shoppingList.some((i) => i.id === ingredient.id)}
+                          className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-medium transition-all ${
+                            shoppingList.some((i) => i.id === ingredient.id)
+                              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                              : "bg-yellow-400 text-white hover:bg-yellow-500 shadow-md"
+                          }`}
+                        >
+                          <Plus size={18} />
+                          {shoppingList.some((i) => i.id === ingredient.id) ? "Ajouté" : "Ajouter"}
+                        </button>
+                      </div>
                     </div>
-                    <div className="p-4">
-                      <h4 className="font-bold text-gray-900 mb-1">{item.name}</h4>
-                      <p className="text-sm text-gray-600 mb-3">{item.quantity}</p>
-                      <button
-                        onClick={() => addToList(item)}
-                        disabled={shoppingList.some(i => i.id === item.id)}
-                        className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg font-medium text-sm transition-all ${
-                          shoppingList.some(i => i.id === item.id)
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white hover:from-yellow-600 hover:to-yellow-700 shadow-md'
-                        }`}
-                      >
-                        <Plus size={18} />
-                        {shoppingList.some(i => i.id === item.id) ? 'Ajouté' : 'Ajouter'}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-4">Aucun ingrédient manquant.</p>
+              )}
             </div>
 
-            {/* Unused Products Section */}
-            <div className="bg-white rounded-2xl shadow-md p-6">
+            <div className="bg-white rounded-3xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
                   <Clock className="text-blue-500" size={24} />
@@ -189,43 +149,61 @@ export default function ShoppingList() {
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={scrollLeft}
+                    onClick={() => scrollLeft("unused")}
                     className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
                   >
                     <ChevronLeft size={20} className="text-gray-600" />
                   </button>
                   <button
-                    onClick={scrollRight}
+                    onClick={() => scrollRight("unused")}
                     className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
                   >
                     <ChevronRight size={20} className="text-gray-600" />
                   </button>
                 </div>
               </div>
-              <div className="overflow-x-auto flex gap-4 pb-4" style={{ scrollBehavior: 'smooth', transform: `translateX(-${scrollPosition}px)` }}>
+              <div
+                className="overflow-x-auto flex gap-4 pb-4"
+                style={{ scrollBehavior: "smooth", transform: `translateX(-${scrollPosition.unused}px)` }}
+              >
                 {unusedProducts.map((item) => (
-                  <div key={item.id} className="min-w-[200px] bg-white rounded-xl border-2 border-blue-200 overflow-hidden hover:border-blue-300 hover:shadow-lg transition-all">
-                    <div className="relative h-40 bg-gradient-to-br from-blue-50 to-blue-100">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
+                  <div
+                    key={item.id}
+                    className="min-w-[320px] bg-blue-50 rounded-3xl border-2 border-blue-200 overflow-hidden hover:shadow-lg transition-all"
+                  >
+                    <div className="relative h-56 bg-blue-100 rounded-t-3xl flex items-center justify-center">
+                      {item.image ? (
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-full h-full object-cover rounded-t-3xl"
+                        />
+                      ) : (
+                        <div className="w-24 h-24 bg-blue-200 rounded-full flex items-center justify-center">
+                          <img
+                            src={`https://via.placeholder.com/80?text=${encodeURIComponent(
+                              item.name.charAt(0)
+                            )}`}
+                            alt={item.name}
+                            className="w-16 h-16"
+                          />
+                        </div>
+                      )}
                     </div>
-                    <div className="p-4">
-                      <h4 className="font-bold text-gray-900 mb-1">{item.name}</h4>
-                      <p className="text-sm text-gray-600 mb-3">{item.quantity}</p>
+                    <div className="p-5 bg-white rounded-b-3xl">
+                      <h4 className="font-bold text-xl text-gray-900 mb-1">{item.name}</h4>
+                      <p className="text-gray-600 mb-4">{item.quantity}</p>
                       <button
                         onClick={() => addToList(item)}
-                        disabled={shoppingList.some(i => i.id === item.id)}
-                        className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg font-medium text-sm transition-all ${
-                          shoppingList.some(i => i.id === item.id)
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-md'
+                        disabled={shoppingList.some((i) => i.id === item.id)}
+                        className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-medium transition-all ${
+                          shoppingList.some((i) => i.id === item.id)
+                            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                            : "bg-yellow-400 text-white hover:bg-yellow-500 shadow-md"
                         }`}
                       >
                         <Plus size={18} />
-                        {shoppingList.some(i => i.id === item.id) ? 'Ajouté' : 'Ajouter'}
+                        {shoppingList.some((i) => i.id === item.id) ? "Ajouté" : "Ajouter"}
                       </button>
                     </div>
                   </div>
@@ -233,58 +211,7 @@ export default function ShoppingList() {
               </div>
             </div>
 
-            {/* Suggestions Section */}
-            <div className="bg-white rounded-2xl shadow-md p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">Suggestions basées sur vos habitudes</h3>
-                <div className="flex gap-2">
-                  <button
-                    onClick={scrollLeft}
-                    className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
-                  >
-                    <ChevronLeft size={20} className="text-gray-600" />
-                  </button>
-                  <button
-                    onClick={scrollRight}
-                    className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
-                  >
-                    <ChevronRight size={20} className="text-gray-600" />
-                  </button>
-                </div>
-              </div>
-              <div className="overflow-x-auto flex gap-4 pb-4" style={{ scrollBehavior: 'smooth', transform: `translateX(-${scrollPosition}px)` }}>
-                {suggestions.map((item) => (
-                  <div key={item.id} className="min-w-[200px] bg-white rounded-xl border-2 border-gray-200 overflow-hidden hover:border-green-300 hover:shadow-lg transition-all">
-                    <div className="relative h-40 bg-gradient-to-br from-gray-100 to-gray-200">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="p-4">
-                      <h4 className="font-bold text-gray-900 mb-1">{item.name}</h4>
-                      <p className="text-sm text-gray-600 mb-3">{item.quantity}</p>
-                      <button
-                        onClick={() => addToList(item)}
-                        disabled={shoppingList.some(i => i.id === item.id)}
-                        className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg font-medium text-sm transition-all ${
-                          shoppingList.some(i => i.id === item.id)
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 shadow-md'
-                        }`}
-                      >
-                        <Plus size={18} />
-                        {shoppingList.some(i => i.id === item.id) ? 'Ajouté' : 'Ajouter'}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Manual Add Section */}
-            <div className="bg-white rounded-2xl shadow-md p-6">
+            <div className="bg-white rounded-3xl shadow-lg p-6">
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Ajouter un article personnalisé</h3>
               <div className="space-y-3">
                 <div>
@@ -294,7 +221,7 @@ export default function ShoppingList() {
                     placeholder="Ex: Pain complet"
                     value={manualItem}
                     onChange={(e) => setManualItem(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addManualItem()}
+                    onKeyPress={(e) => e.key === "Enter" && addManualItem()}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   />
                 </div>
@@ -305,7 +232,7 @@ export default function ShoppingList() {
                     placeholder="Ex: 1 unité, 500g, 2L"
                     value={manualQuantity}
                     onChange={(e) => setManualQuantity(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addManualItem()}
+                    onKeyPress={(e) => e.key === "Enter" && addManualItem()}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   />
                 </div>
@@ -320,9 +247,8 @@ export default function ShoppingList() {
             </div>
           </div>
 
-          {/* Right Column - Shopping List */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-md p-6 sticky top-24">
+            <div className="bg-white rounded-3xl shadow-lg p-6 sticky top-24">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-2xl font-bold text-gray-900">
                   Ma liste
@@ -351,7 +277,10 @@ export default function ShoppingList() {
               ) : (
                 <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
                   {shoppingList.map((item) => (
-                    <div key={item.id} className="flex items-center gap-3 p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 hover:border-green-300 transition-all">
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-3 p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl border border-gray-200 hover:border-green-300 transition-all"
+                    >
                       {!item.manual && item.image && (
                         <img
                           src={item.image}
@@ -380,7 +309,7 @@ export default function ShoppingList() {
               )}
               {shoppingList.length > 0 && (
                 <div className="mt-6 pt-6 border-t border-gray-200">
-                  <button className="w-full py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold rounded-xl transition-all shadow-md">
+                  <button className="w-full py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold rounded-2xl transition-all shadow-md">
                     Exporter la liste
                   </button>
                 </div>

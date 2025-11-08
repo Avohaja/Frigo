@@ -3,7 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 require('dotenv').config();
-
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -21,7 +20,6 @@ const pool = new Pool({
 });
 
 // ==================== PRODUCTS ROUTES ====================
-
 // GET all products
 app.get('/api/products', async (req, res) => {
   try {
@@ -90,12 +88,11 @@ app.delete('/api/products/:id', async (req, res) => {
 });
 
 // ==================== RECIPES ROUTES ====================
-
 // GET all recipes
 app.get('/api/recipes', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM recipes ORDER BY created_at DESC');
-    
+
     // Get ingredients and steps for each recipe
     const recipes = await Promise.all(result.rows.map(async (recipe) => {
       const ingredients = await pool.query(
@@ -106,15 +103,16 @@ app.get('/api/recipes', async (req, res) => {
         'SELECT description FROM recipe_steps WHERE recipe_id = $1 ORDER BY step_number',
         [recipe.id]
       );
-      
+
       return {
         ...recipe,
-        availableIngredients: ingredients.rows.filter(i => i.is_available).map(i => i.ingredient_name),
-        missingIngredients: ingredients.rows.filter(i => !i.is_available).map(i => i.ingredient_name),
+        isUsed: recipe.is_used,
+        availableIngredients: ingredients.rows.filter(i => i.is_available).map(i => ({ name: i.ingredient_name })),
+        missingIngredients: ingredients.rows.filter(i => !i.is_available).map(i => ({ name: i.ingredient_name, quantity: '' })),
         steps: steps.rows.map(s => s.description)
       };
     }));
-    
+
     res.json(recipes);
   } catch (err) {
     console.error(err);
@@ -127,32 +125,32 @@ app.post('/api/recipes', async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    
+
     const { title, image, type, time, difficulty, availableIngredients, missingIngredients, steps } = req.body;
-    
+
     // Insert recipe
     const recipeResult = await client.query(
-      'INSERT INTO recipes (title, image, type, time, difficulty) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [title, image, type, time, difficulty]
+      'INSERT INTO recipes (title, image, type, time, difficulty, is_used) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [title, image, type, time, difficulty, false]
     );
     const recipeId = recipeResult.rows[0].id;
-    
+
     // Insert available ingredients
     for (const ingredient of availableIngredients || []) {
       await client.query(
         'INSERT INTO recipe_ingredients (recipe_id, ingredient_name, is_available) VALUES ($1, $2, $3)',
-        [recipeId, ingredient, true]
+        [recipeId, ingredient.name, true]
       );
     }
-    
+
     // Insert missing ingredients
     for (const ingredient of missingIngredients || []) {
       await client.query(
         'INSERT INTO recipe_ingredients (recipe_id, ingredient_name, is_available) VALUES ($1, $2, $3)',
-        [recipeId, ingredient, false]
+        [recipeId, ingredient.name, false]
       );
     }
-    
+
     // Insert steps
     for (let i = 0; i < (steps || []).length; i++) {
       await client.query(
@@ -160,7 +158,7 @@ app.post('/api/recipes', async (req, res) => {
         [recipeId, i + 1, steps[i]]
       );
     }
-    
+
     await client.query('COMMIT');
     res.json(recipeResult.rows[0]);
   } catch (err) {
@@ -177,41 +175,41 @@ app.put('/api/recipes/:id', async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    
+
     const { id } = req.params;
-    const { title, image, type, time, difficulty, availableIngredients, missingIngredients, steps } = req.body;
-    
+    const { title, image, type, time, difficulty, availableIngredients, missingIngredients, steps, isUsed } = req.body;
+
     // Update recipe
     const recipeResult = await client.query(
-      'UPDATE recipes SET title = $1, image = $2, type = $3, time = $4, difficulty = $5 WHERE id = $6 RETURNING *',
-      [title, image || '', type, time, difficulty, id]
+      'UPDATE recipes SET title = $1, image = $2, type = $3, time = $4, difficulty = $5, is_used = $6 WHERE id = $7 RETURNING *',
+      [title, image || '', type, time, difficulty, isUsed, id]
     );
-    
+
     if (recipeResult.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Recipe not found' });
     }
-    
+
     // Delete old ingredients and steps
     await client.query('DELETE FROM recipe_ingredients WHERE recipe_id = $1', [id]);
     await client.query('DELETE FROM recipe_steps WHERE recipe_id = $1', [id]);
-    
+
     // Insert new available ingredients
     for (const ingredient of availableIngredients || []) {
       await client.query(
         'INSERT INTO recipe_ingredients (recipe_id, ingredient_name, is_available) VALUES ($1, $2, $3)',
-        [id, ingredient, true]
+        [id, ingredient.name, true]
       );
     }
-    
+
     // Insert new missing ingredients
     for (const ingredient of missingIngredients || []) {
       await client.query(
         'INSERT INTO recipe_ingredients (recipe_id, ingredient_name, is_available) VALUES ($1, $2, $3)',
-        [id, ingredient, false]
+        [id, ingredient.name, false]
       );
     }
-    
+
     // Insert new steps
     for (let i = 0; i < (steps || []).length; i++) {
       await client.query(
@@ -219,7 +217,7 @@ app.put('/api/recipes/:id', async (req, res) => {
         [id, i + 1, steps[i]]
       );
     }
-    
+
     await client.query('COMMIT');
     console.log(recipeResult.rows[0]);
     res.json(recipeResult.rows[0]);
@@ -229,6 +227,24 @@ app.put('/api/recipes/:id', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   } finally {
     client.release();
+  }
+});
+
+// TOGGLE recipe usage
+app.patch('/api/recipes/:id/toggle', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      'UPDATE recipes SET is_used = NOT is_used WHERE id = $1 RETURNING *',
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Recipe not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

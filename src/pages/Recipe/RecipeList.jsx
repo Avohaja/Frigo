@@ -45,7 +45,6 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
           <h2 className="text-4xl font-bold text-gray-900 mb-2">Recettes</h2>
           <p className="text-gray-600">Découvrez et gérez vos recettes favorites. Cochez les recettes pour ajouter leurs ingrédients manquants à votre liste de courses.</p>
         </div>
-
         <div className="flex items-center justify-between mb-6 gap-4">
           <div className="flex-1 max-w-2xl relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -57,10 +56,10 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
               className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
           </div>
-          
+
           <div className="flex gap-3">
             <div className="relative">
-              <button 
+              <button
                 onClick={() => {
                   setShowTypeDropdown(!showTypeDropdown);
                   setShowDifficultyDropdown(false);
@@ -72,7 +71,7 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
                 </span>
                 <ChevronDown size={18} className="text-gray-500" />
               </button>
-              
+
               {showTypeDropdown && (
                 <div className="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-10 min-w-[200px]">
                   {types.map((type) => (
@@ -92,9 +91,8 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
                 </div>
               )}
             </div>
-
             <div className="relative">
-              <button 
+              <button
                 onClick={() => {
                   setShowDifficultyDropdown(!showDifficultyDropdown);
                   setShowTypeDropdown(false);
@@ -106,7 +104,7 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
                 </span>
                 <ChevronDown size={18} className="text-gray-500" />
               </button>
-              
+
               {showDifficultyDropdown && (
                 <div className="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-10 min-w-[200px]">
                   {difficulties.map((difficulty) => (
@@ -127,8 +125,8 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
               )}
             </div>
           </div>
-          
-          <button 
+
+          <button
             onClick={onAddRecipe}
             className="flex items-center gap-2 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
           >
@@ -136,7 +134,6 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
             Ajouter Recette
           </button>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {getFilteredRecipes().length === 0 ? (
             <div className="col-span-full py-12 text-center text-gray-500">
@@ -146,14 +143,14 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
             getFilteredRecipes().map((recipe) => {
               const isSelected = isRecipeSelected(recipe.id);
               return (
-                <div 
-                  key={recipe.id} 
+                <div
+                  key={recipe.id}
                   className={`bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all ${
                     isSelected ? 'ring-2 ring-green-500' : ''
                   }`}
                 >
                   <div className="relative">
-                    <div 
+                    <div
                       className="h-48 bg-cover bg-center cursor-pointer"
                       style={{ backgroundImage: `url(${recipe.image})` }}
                       onClick={() => onViewRecipe(recipe.id)}
@@ -162,8 +159,8 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
                     <button
                       onClick={(e) => handleToggleRecipe(recipe, e)}
                       className={`absolute top-3 right-3 w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-lg ${
-                        isSelected 
-                          ? 'bg-green-500 text-white' 
+                        isSelected
+                          ? 'bg-green-500 text-white'
                           : 'bg-white text-gray-400 hover:bg-gray-100'
                       }`}
                       title={isSelected ? 'Retirer de la liste de courses' : 'Ajouter à la liste de courses'}
@@ -172,7 +169,7 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
                     </button>
                   </div>
                   <div className="p-5">
-                    <h3 
+                    <h3
                       className="text-xl font-bold text-gray-900 mb-2 cursor-pointer hover:text-green-600"
                       onClick={() => onViewRecipe(recipe.id)}
                     >
@@ -188,7 +185,7 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
                       </span>
                     </div>
                     <p className="text-sm text-gray-600 mb-4">{recipe.type}</p>
-                    
+
                     {/* Show missing ingredients if any */}
                     {recipe.missingIngredients && recipe.missingIngredients.length > 0 && (
                       <div className="mb-4 p-3 bg-orange-50 rounded-lg border border-orange-100">
@@ -196,27 +193,27 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
                         <div className="flex flex-wrap gap-1">
                           {recipe.missingIngredients.map((ingredient, idx) => (
                             <span key={idx} className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full">
-                              {ingredient}
+                              {ingredient.name} ({ingredient.quantity})
                             </span>
                           ))}
                         </div>
                       </div>
                     )}
-                    
+
                     <div className="flex items-center gap-2">
-                      <button 
+                      <button
                         onClick={() => onViewRecipe(recipe.id)}
                         className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium text-sm"
                       >
                         Voir détails
                       </button>
-                      <button 
+                      <button
                         onClick={() => onEditRecipe(recipe.id)}
                         className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
                       >
                         <Edit2 size={18} />
                       </button>
-                      <button 
+                      <button
                         onClick={() => {
                           if (window.confirm(`Êtes-vous sûr de vouloir supprimer "${recipe.title}" ?`)) {
                             deleteRecipe(recipe.id);
@@ -233,7 +230,6 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
             })
           )}
         </div>
-
         <div className="mt-6 text-sm text-gray-600">
           {getFilteredRecipes().length} recette(s) affichée(s) sur {recipes.length} total
         </div>

@@ -1,26 +1,17 @@
-import { createContext, useState, useContext } from 'react';
+import { createContext, useContext, useState } from 'react';
 
 const ShoppingContext = createContext();
 
-export const useShoppingList = () => {
-  const context = useContext(ShoppingContext);
-  if (!context) {
-    throw new Error('useShoppingList must be used within ShoppingProvider');
-  }
-  return context;
-};
-
 export const ShoppingProvider = ({ children }) => {
   const [selectedRecipes, setSelectedRecipes] = useState([]);
-  const [manualItems, setManualItems] = useState([]);
 
   const toggleRecipe = (recipe) => {
-    setSelectedRecipes(prev => {
-      const exists = prev.find(r => r.id === recipe.id);
-      if (exists) {
-        return prev.filter(r => r.id !== recipe.id);
+    setSelectedRecipes(prevSelected => {
+      const isSelected = prevSelected.some(r => r.id === recipe.id);
+      if (isSelected) {
+        return prevSelected.filter(r => r.id !== recipe.id);
       } else {
-        return [...prev, recipe];
+        return [...prevSelected, recipe];
       }
     });
   };
@@ -30,47 +21,36 @@ export const ShoppingProvider = ({ children }) => {
   };
 
   const getMissingIngredients = () => {
-    const ingredients = [];
+    const missingIngredients = [];
     selectedRecipes.forEach(recipe => {
-      (recipe.missingIngredients || []).forEach(ingredient => {
-        if (!ingredients.find(i => i.name.toLowerCase() === ingredient.toLowerCase())) {
-          ingredients.push({
-            id: `${recipe.id}-${ingredient}`,
-            name: ingredient,
-            recipeId: recipe.id,
-            recipeName: recipe.title
-          });
-        }
-      });
+      if (recipe.missingIngredients && recipe.missingIngredients.length > 0) {
+        recipe.missingIngredients.forEach(ingredient => {
+          if (!missingIngredients.some(item => item.name === ingredient.name)) {
+            missingIngredients.push({
+              id: `${recipe.id}-${ingredient.name}`,
+              name: ingredient.name,
+              quantity: ingredient.quantity || "Quantité non spécifiée",
+              recipeId: recipe.id,
+              recipeName: recipe.title
+            });
+          }
+        });
+      }
     });
-    return ingredients;
-  };
-
-  const addManualItem = (item) => {
-    setManualItems(prev => [...prev, { ...item, id: Date.now(), manual: true }]);
-  };
-
-  const removeManualItem = (id) => {
-    setManualItems(prev => prev.filter(item => item.id !== id));
-  };
-
-  const clearAll = () => {
-    setSelectedRecipes([]);
-    setManualItems([]);
+    return missingIngredients;
   };
 
   return (
-    <ShoppingContext.Provider value={{
-      selectedRecipes,
-      manualItems,
-      toggleRecipe,
-      isRecipeSelected,
-      getMissingIngredients,
-      addManualItem,
-      removeManualItem,
-      clearAll
-    }}>
+    <ShoppingContext.Provider value={{ selectedRecipes, toggleRecipe, isRecipeSelected, getMissingIngredients }}>
       {children}
     </ShoppingContext.Provider>
   );
+};
+
+export const useShoppingList = () => {
+  const context = useContext(ShoppingContext);
+  if (!context) {
+    throw new Error('useShoppingList must be used within ShoppingProvider');
+  }
+  return context;
 };
