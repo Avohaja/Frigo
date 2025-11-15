@@ -36,6 +36,12 @@ export const RecipeProvider = ({ children }) => {
 
   const addRecipe = async (recipe) => {
     //ajout dans le fichier json local
+
+    console.log("Ajout de la recette dans le fichier json de la base local : ", recipe);
+    console.log("Ingrédient manquant de la recette : ", recipe.missingIngredients);
+    console.log("Ingrédient disponible de la recette : ", recipe.availableIngredients);
+    console.log("Étapes de la recette : ", recipe.steps);
+
     try {
       const res = await fetch(`${JSON_URL}/recipes`, {
           method: "POST",

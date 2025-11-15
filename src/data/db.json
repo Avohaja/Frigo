@@ -79,6 +79,14 @@
       "datePeremption": "2025-10-16",
       "categorie": "charcuterie",
       "status": "fresh"
+    },
+    {
+      "id": "p11",
+      "name": "Concombre",
+      "quantity": 1,
+      "datePeremption": "2025-10-20",
+      "categorie": "légume",
+      "status": "fresh"
     }
   ],
   "history": [

@@ -49,30 +49,68 @@ export default function Dashboard() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSendMessage = () => {
-    if (!inputMessage.trim()) return;
+  // const handleSendMessage = () => {
+  //   if (!inputMessage.trim()) return;
 
-    const userMessage = {
-      role: 'user',
-      content: inputMessage,
-      timestamp: new Date()
-    };
+  //   const userMessage = {
+  //     role: 'user',
+  //     content: inputMessage,
+  //     timestamp: new Date()
+  //   };
 
-    setMessages([...messages, userMessage]);
-    setInputMessage('');
-    setIsTyping(true);
+  //   setMessages([...messages, userMessage]);
+  //   setInputMessage('');
+  //   setIsTyping(true);
 
-    // Simuler une réponse de l'IA
-    setTimeout(() => {
-      const response = generateAIResponse(inputMessage);
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: response,
-        timestamp: new Date()
-      }]);
-      setIsTyping(false);
-    }, 1500);
+  //   // Simuler une réponse de l'IA
+  //   setTimeout(() => {
+  //     const response = generateAIResponse(inputMessage);
+  //     setMessages(prev => [...prev, {
+  //       role: 'assistant',
+  //       content: response,
+  //       timestamp: new Date()
+  //     }]);
+  //     setIsTyping(false);
+  //   }, 1500);
+  // };
+
+  const handleSendMessage = async () => {
+  if (!inputMessage.trim()) return;
+
+  const newMessage = {
+    role: "user",
+    content: inputMessage,
+    timestamp: new Date(),
   };
+
+  setMessages([...messages, newMessage]);
+  setInputMessage("");
+  setIsTyping(true);
+
+  try {
+    const response = await fetch("http://localhost:5000/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages: [
+          ...messages.map(m => ({ role: m.role, content: m.content })),
+          { role: "user", content: inputMessage },
+        ],
+      }),
+    });
+
+    const data = await response.json();
+    setMessages(prev => [
+      ...prev,
+      { role: "assistant", content: data.reply, timestamp: new Date() },
+    ]);
+  } catch (error) {
+    console.error("Error sending message:", error);
+  } finally {
+    setIsTyping(false);
+  }
+};
+
 
   const generateAIResponse = (question) => {
     const lowerQuestion = question.toLowerCase();

@@ -3,6 +3,9 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 require('dotenv').config();
+const fs = require('fs');
+const OpenAI = require('openai');
+const {Mistral} = require('@mistralai/mistralai');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -20,6 +23,23 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
+// Load OpenAI API key
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Mistral API configuration
+// const axios = require('axios');
+// const MISTRAL_API_URL = 'https://api.mistral.ai/v1/chat/completions';
+// const API_KEY = process.env.MISTRAL_API_KEY;
+
+// Initialisation du client Mistral
+const client = new Mistral({
+  apiKey: process.env.MISTRAL_API_KEY,
+  server: 'eu', // Optionnel : spécifiez le serveur (ex: 'eu' pour l'Europe)
+});
+
+
 // ==================== PRODUCTS ROUTES ====================
 
 // GET all products
@@ -32,6 +52,7 @@ app.get('/api/products', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 
 // GET one product
 app.get('/api/products/:id', async (req, res) => {
@@ -242,6 +263,59 @@ app.delete('/api/recipes/:id', async (req, res) => {
   }
 });
 
+// ==================== AI CHATBOT ROUTE (MISTRAL) ====================
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { messages } = req.body;
+    console.log('Message reçu mistral:', req.body);
+
+
+    const fridgeData = JSON.parse(fs.readFileSync('./../src/data/myDb.json', "utf8"));
+
+  const systemPrompt = `
+  You are FridgeBot. You answer questions about the user's fridge contents.
+  Their fridge currently contains: ${JSON.stringify(fridgeData)}.
+  Only talk about food-related topics.
+  `;
+
+    // Appel à l'API Mistral via le SDK
+    const response = await client.chat.complete({
+      model: 'mistral-small-latest', // ou 'mistral-medium-latest', etc.
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages
+      ],
+    });
+
+    console.log('Réponse Mistral:', response.choices);
+
+    res.json({ reply: response.choices[0].message.content });
+  } catch (error) {
+    console.error('Erreur API Mistral:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ==================== AI CHATBOT ROUTE (CHATGPT) ====================
+app.post("/api/chatbot", async (req, res) => {
+  try {
+    const { messages } = req.body;
+    console.log("Messages received gpt:", messages);
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4.0", // or "gpt-4.1" if 5 isn’t available yet
+      messages: messages,
+    });
+
+    res.json({ reply: completion.choices[0].message.content });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
+
+
+
+// Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
