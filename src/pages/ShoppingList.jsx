@@ -1,33 +1,44 @@
-import { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, X, ShoppingCart, AlertTriangle, Clock } from "lucide-react";
-import { useShoppingList } from '../context/ShoppingContext';
+import { useState, useMemo } from "react";
+import { ChevronLeft, ChevronRight, Plus, X, ShoppingCart, AlertTriangle, Clock, Package } from "lucide-react";
+import { useProducts } from "../context/ProductContext";
+import { useShoppingList } from "../context/ShoppingContext";
 
 export default function ShoppingList() {
+  const { products } = useProducts();
   const [manualItem, setManualItem] = useState("");
   const [manualQuantity, setManualQuantity] = useState("");
-  const [scrollPosition, setScrollPosition] = useState({ missing: 0, unused: 0 });
+  const [scrollPosition, setScrollPosition] = useState({ expired: 0, lowStock: 0, missing: 0 });
   const [shoppingList, setShoppingList] = useState([]);
-
   const { getMissingIngredients } = useShoppingList();
   const missingIngredients = getMissingIngredients();
 
-  // Produits non consommés (exemple statique, à remplacer par tes données réelles)
-  const unusedProducts = [
-    {
-      id: 201,
-      name: "Riz basmati",
-      quantity: "1 kg",
-      image: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=300&h=300&fit=crop",
-      type: "unused",
-    },
-    {
-      id: 202,
-      name: "Lentilles",
-      quantity: "500 g",
-      image: "https://images.unsplash.com/photo-1603133872878-684f2b8bc379?w=300&h=300&fit=crop",
-      type: "unused",
-    },
-  ];
+  // Filtrer les produits périmés ou bientôt périmés
+  const expiredProducts = useMemo(() => {
+    return products.filter(p => p.status === 'expired' || p.status === 'expiring')
+      .map(p => ({
+        id: p.id,
+        name: p.name,
+        quantity: `${p.quantity}`,
+        category: p.category,
+        status: p.status,
+        type: 'expired',
+        image: p.image || `https://via.placeholder.com/300?text=${encodeURIComponent(p.name)}`
+      }));
+  }, [products]);
+
+  // Filtrer les produits à stock faible
+  const lowStockProducts = useMemo(() => {
+    return products.filter(p => p.status === 'low')
+      .map(p => ({
+        id: p.id,
+        name: p.name,
+        quantity: `${p.quantity}`,
+        category: p.category,
+        status: p.status,
+        type: 'lowStock',
+        image: p.image || `https://via.placeholder.com/300?text=${encodeURIComponent(p.name)}`
+      }));
+  }, [products]);
 
   const addToList = (item) => {
     if (!shoppingList.find((i) => i.id === item.id)) {
@@ -64,6 +75,7 @@ export default function ShoppingList() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 py-8">
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* En-tête */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
@@ -76,8 +88,10 @@ export default function ShoppingList() {
           </div>
         </div>
 
+        {/* Grille principale */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
+            {/* Ingrédients manquants */}
             <div className="bg-white rounded-3xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
@@ -104,7 +118,7 @@ export default function ShoppingList() {
                   className="overflow-x-auto flex gap-4 pb-4"
                   style={{ scrollBehavior: "smooth", transform: `translateX(-${scrollPosition.missing}px)` }}
                 >
-                  {missingIngredients.map((ingredient, index) => (
+                  {missingIngredients.map((ingredient) => (
                     <div
                       key={ingredient.id}
                       className="min-w-[320px] bg-yellow-50 rounded-3xl border-2 border-yellow-200 overflow-hidden hover:shadow-lg transition-all"
@@ -141,76 +155,147 @@ export default function ShoppingList() {
               )}
             </div>
 
-            <div className="bg-white rounded-3xl shadow-lg p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-2">
-                  <Clock className="text-blue-500" size={24} />
-                  <h3 className="text-2xl font-bold text-gray-900">Produits non consommés</h3>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => scrollLeft("unused")}
-                    className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
-                  >
-                    <ChevronLeft size={20} className="text-gray-600" />
-                  </button>
-                  <button
-                    onClick={() => scrollRight("unused")}
-                    className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
-                  >
-                    <ChevronRight size={20} className="text-gray-600" />
-                  </button>
-                </div>
-              </div>
-              <div
-                className="overflow-x-auto flex gap-4 pb-4"
-                style={{ scrollBehavior: "smooth", transform: `translateX(-${scrollPosition.unused}px)` }}
-              >
-                {unusedProducts.map((item) => (
-                  <div
-                    key={item.id}
-                    className="min-w-[320px] bg-blue-50 rounded-3xl border-2 border-blue-200 overflow-hidden hover:shadow-lg transition-all"
-                  >
-                    <div className="relative h-56 bg-blue-100 rounded-t-3xl flex items-center justify-center">
-                      {item.image ? (
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-full h-full object-cover rounded-t-3xl"
-                        />
-                      ) : (
-                        <div className="w-24 h-24 bg-blue-200 rounded-full flex items-center justify-center">
-                          <img
-                            src={`https://via.placeholder.com/80?text=${encodeURIComponent(
-                              item.name.charAt(0)
-                            )}`}
-                            alt={item.name}
-                            className="w-16 h-16"
-                          />
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-5 bg-white rounded-b-3xl">
-                      <h4 className="font-bold text-xl text-gray-900 mb-1">{item.name}</h4>
-                      <p className="text-gray-600 mb-4">{item.quantity}</p>
-                      <button
-                        onClick={() => addToList(item)}
-                        disabled={shoppingList.some((i) => i.id === item.id)}
-                        className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-medium transition-all ${
-                          shoppingList.some((i) => i.id === item.id)
-                            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                            : "bg-yellow-400 text-white hover:bg-yellow-500 shadow-md"
-                        }`}
-                      >
-                        <Plus size={18} />
-                        {shoppingList.some((i) => i.id === item.id) ? "Ajouté" : "Ajouter"}
-                      </button>
-                    </div>
+            {/* Produits périmés */}
+            {expiredProducts.length > 0 && (
+              <div className="bg-white rounded-3xl shadow-lg p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="text-red-500" size={24} />
+                    <h3 className="text-2xl font-bold text-gray-900">Produits périmés</h3>
                   </div>
-                ))}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => scrollLeft("expired")}
+                      className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+                    >
+                      <ChevronLeft size={20} className="text-gray-600" />
+                    </button>
+                    <button
+                      onClick={() => scrollRight("expired")}
+                      className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+                    >
+                      <ChevronRight size={20} className="text-gray-600" />
+                    </button>
+                  </div>
+                </div>
+                <div
+                  className="overflow-x-auto flex gap-4 pb-4"
+                  style={{ scrollBehavior: "smooth", transform: `translateX(-${scrollPosition.expired}px)` }}
+                >
+                  {expiredProducts.map((item) => (
+                    <div
+                      key={item.id}
+                      className="min-w-[320px] bg-red-50 rounded-3xl border-2 border-red-200 overflow-hidden hover:shadow-lg transition-all"
+                    >
+                      <div className="relative h-56 bg-red-100 rounded-t-3xl flex items-center justify-center">
+                        {item.image ? (
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-full h-full object-cover rounded-t-3xl"
+                          />
+                        ) : (
+                          <div className="w-24 h-24 bg-red-200 rounded-full flex items-center justify-center">
+                            <AlertTriangle className="text-red-600" size={48} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-5 bg-white rounded-b-3xl">
+                        <h4 className="font-bold text-xl text-gray-900 mb-1">{item.name}</h4>
+                        <p className="text-gray-600 mb-2">{item.category}</p>
+                        <p className="text-sm text-red-600 mb-4">
+                          {item.status === 'expired' ? '❌ Périmé' : '⚠️ Expire bientôt'}
+                        </p>
+                        <button
+                          onClick={() => addToList(item)}
+                          disabled={shoppingList.some((i) => i.id === item.id)}
+                          className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-medium transition-all ${
+                            shoppingList.some((i) => i.id === item.id)
+                              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                              : "bg-red-500 text-white hover:bg-red-600 shadow-md"
+                          }`}
+                        >
+                          <Plus size={18} />
+                          {shoppingList.some((i) => i.id === item.id) ? "Ajouté" : "Ajouter"}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
+            {/* Produits à stock faible */}
+            {lowStockProducts.length > 0 && (
+              <div className="bg-white rounded-3xl shadow-lg p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <Package className="text-yellow-500" size={24} />
+                    <h3 className="text-2xl font-bold text-gray-900">Produits à stock faible</h3>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => scrollLeft("lowStock")}
+                      className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+                    >
+                      <ChevronLeft size={20} className="text-gray-600" />
+                    </button>
+                    <button
+                      onClick={() => scrollRight("lowStock")}
+                      className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+                    >
+                      <ChevronRight size={20} className="text-gray-600" />
+                    </button>
+                  </div>
+                </div>
+                <div
+                  className="overflow-x-auto flex gap-4 pb-4"
+                  style={{ scrollBehavior: "smooth", transform: `translateX(-${scrollPosition.lowStock}px)` }}
+                >
+                  {lowStockProducts.map((item) => (
+                    <div
+                      key={item.id}
+                      className="min-w-[320px] bg-yellow-50 rounded-3xl border-2 border-yellow-200 overflow-hidden hover:shadow-lg transition-all"
+                    >
+                      <div className="relative h-56 bg-yellow-100 rounded-t-3xl flex items-center justify-center">
+                        {item.image ? (
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-full h-full object-cover rounded-t-3xl"
+                          />
+                        ) : (
+                          <div className="w-24 h-24 bg-yellow-200 rounded-full flex items-center justify-center">
+                            <Package className="text-yellow-600" size={48} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-5 bg-white rounded-b-3xl">
+                        <h4 className="font-bold text-xl text-gray-900 mb-1">{item.name}</h4>
+                        <p className="text-gray-600 mb-2">{item.category}</p>
+                        <p className="text-sm text-yellow-600 mb-4">
+                          📦 Restant: {item.quantity}
+                        </p>
+                        <button
+                          onClick={() => addToList(item)}
+                          disabled={shoppingList.some((i) => i.id === item.id)}
+                          className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-medium transition-all ${
+                            shoppingList.some((i) => i.id === item.id)
+                              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                              : "bg-yellow-400 text-white hover:bg-yellow-500 shadow-md"
+                          }`}
+                        >
+                          <Plus size={18} />
+                          {shoppingList.some((i) => i.id === item.id) ? "Ajouté" : "Ajouter"}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Ajout manuel */}
             <div className="bg-white rounded-3xl shadow-lg p-6">
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Ajouter un article personnalisé</h3>
               <div className="space-y-3">
@@ -247,6 +332,7 @@ export default function ShoppingList() {
             </div>
           </div>
 
+          {/* Ma liste */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-3xl shadow-lg p-6 sticky top-24">
               <div className="flex justify-between items-center mb-6">
