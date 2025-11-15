@@ -1,16 +1,51 @@
 import React, { useState } from 'react';
-import { Search, Edit2, Trash2, ChevronDown, Plus, Clock, Check } from 'lucide-react';
+import { Search, Edit2, Trash2, ChevronDown, Plus, Clock, Check, RefreshCw } from 'lucide-react';
 import { useRecipes } from '../../context/RecipeContext';
 import { useShoppingList } from '../../context/ShoppingContext';
+import { useProducts } from '../../context/ProductContext'; // NEW: Import products
 
 function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
-  const { recipes, deleteRecipe } = useRecipes();
+  const { recipes, deleteRecipe, syncRecipeWithInventory } = useRecipes();
   const { toggleRecipe, isRecipeSelected } = useShoppingList();
+  const { products } = useProducts(); // NEW: Get products from context
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterDifficulty, setFilterDifficulty] = useState('all');
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [showDifficultyDropdown, setShowDifficultyDropdown] = useState(false);
+  const [syncingRecipe, setSyncingRecipe] = useState(null); // NEW: Track syncing state
+
+  // NEW: Handle sync with inventory
+  const handleSyncWithInventory = async (recipeId) => {
+    setSyncingRecipe(recipeId);
+    try {
+      const result = await syncRecipeWithInventory(recipeId, products);
+      
+      if (result && result.changes) {
+        const { addedToAvailable, movedToMissing } = result.changes;
+        
+        let message = 'Synchronisation terminée.';
+        if (addedToAvailable.length > 0) {
+          message += ` ${addedToAvailable.length} ingrédient(s) ajouté(s) aux disponibles.`;
+        }
+        if (movedToMissing.length > 0) {
+          message += ` ${movedToMissing.length} ingrédient(s) déplacé(s) vers manquants.`;
+        }
+        if (addedToAvailable.length === 0 && movedToMissing.length === 0) {
+          message += ' Aucun changement nécessaire.';
+        }
+        
+        alert(message);
+      }
+    } catch (error) {
+      alert('Erreur lors de la synchronisation avec l\'inventaire');
+      console.error('Sync error:', error);
+    } finally {
+      setSyncingRecipe(null);
+    }
+  };
+
+  // ... rest of your existing functions (getFilteredRecipes, getDifficultyColor, etc.)
 
   const types = ['all', ...new Set(recipes.map(r => r.type))];
   const difficulties = ['all', 'Facile', 'Moyen', 'Difficile'];
@@ -46,6 +81,7 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
           <p className="text-gray-600">Découvrez et gérez vos recettes favorites. Cochez les recettes pour ajouter leurs ingrédients manquants à votre liste de courses.</p>
         </div>
         <div className="flex items-center justify-between mb-6 gap-4">
+          {/* Search and filters - keep existing code */}
           <div className="flex-1 max-w-2xl relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <input
@@ -208,6 +244,20 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
                       >
                         Voir détails
                       </button>
+                      
+                      {/* NEW: Sync with Inventory Button */}
+                      <button
+                        onClick={() => handleSyncWithInventory(recipe.id)}
+                        disabled={syncingRecipe === recipe.id}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg disabled:opacity-50"
+                        title="Synchroniser avec l'inventaire"
+                      >
+                        <RefreshCw 
+                          size={18} 
+                          className={syncingRecipe === recipe.id ? 'animate-spin' : ''} 
+                        />
+                      </button>
+                      
                       <button
                         onClick={() => onEditRecipe(recipe.id)}
                         className="p-2 text-green-600 hover:bg-green-50 rounded-lg"

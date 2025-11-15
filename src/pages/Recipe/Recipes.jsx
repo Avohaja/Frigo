@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { RecipeProvider } from '../../context/RecipeContext';
+import { ProductProvider } from '../../context/ProductContext'; // Import ProductProvider
 import RecipeList from './RecipeList';
 import RecipeForm from './RecipeForm';
 import RecipeDetail from './RecipeDetail';
@@ -29,35 +30,37 @@ function Recipes() {
   };
 
   return (
-    <RecipeProvider>
-      <div className="min-h-screen bg-gray-50">
-        {view === 'list' && (
-          <RecipeList 
-            onAddRecipe={handleAddRecipe}
-            onEditRecipe={handleEditRecipe}
-            onViewRecipe={handleViewRecipe}
-          />
-        )}
-        {view === 'add' && (
-          <RecipeForm 
-            onBack={handleBack}
-          />
-        )}
-        {view === 'edit' && (
-          <RecipeForm 
-            recipeId={selectedRecipeId}
-            onBack={handleBack}
-          />
-        )}
-        {view === 'detail' && (
-          <RecipeDetail 
-            recipeId={selectedRecipeId}
-            onBack={handleBack}
-            onEdit={handleEditRecipe}
-          />
-        )}
-      </div>
-    </RecipeProvider>
+    <ProductProvider> {/* Wrap with ProductProvider */}
+      <RecipeProvider>
+        <div className="min-h-screen bg-gray-50">
+          {view === 'list' && (
+            <RecipeList 
+              onAddRecipe={handleAddRecipe}
+              onEditRecipe={handleEditRecipe}
+              onViewRecipe={handleViewRecipe}
+            />
+          )}
+          {view === 'add' && (
+            <RecipeForm 
+              onBack={handleBack}
+            />
+          )}
+          {view === 'edit' && (
+            <RecipeForm 
+              recipeId={selectedRecipeId}
+              onBack={handleBack}
+            />
+          )}
+          {view === 'detail' && (
+            <RecipeDetail 
+              recipeId={selectedRecipeId}
+              onBack={handleBack}
+              onEdit={handleEditRecipe}
+            />
+          )}
+        </div>
+      </RecipeProvider>
+    </ProductProvider>
   );
 }
 
