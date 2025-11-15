@@ -14,7 +14,7 @@ export default function ShoppingList() {
 
   // Filtrer les produits périmés ou bientôt périmés
   const expiredProducts = useMemo(() => {
-    return products.filter(p => p.status === 'expired' || p.status === 'expiring')
+    return products.filter(p => p.status === 'expired' || p.status === 'expiring' || p.status === 'low')
       .map(p => ({
         id: p.id,
         name: p.name,
@@ -51,7 +51,7 @@ export default function ShoppingList() {
       const newItem = {
         id: Date.now(),
         name: manualItem,
-        quantity: manualQuantity || "",
+        quantity: manualQuantity || "1",
         manual: true,
       };
       setShoppingList([...shoppingList, newItem]);
@@ -62,6 +62,16 @@ export default function ShoppingList() {
 
   const removeFromList = (id) => {
     setShoppingList(shoppingList.filter((item) => item.id !== id));
+  };
+
+  const updateQuantity = (itemId, newQuantity) => {
+    setShoppingList(prevList => 
+      prevList.map(item => 
+        item.id === itemId 
+          ? { ...item, quantity: newQuantity.toString() }
+          : item
+      )
+    );
   };
 
   const scrollLeft = (section) => {
@@ -88,10 +98,9 @@ export default function ShoppingList() {
           </div>
         </div>
 
-        {/* Grille principale */}
+        {/* Ingrédients manquants */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            {/* Ingrédients manquants */}
             <div className="bg-white rounded-3xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
@@ -230,7 +239,7 @@ export default function ShoppingList() {
               <div className="bg-white rounded-3xl shadow-lg p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
-                    <Package className="text-yellow-500" size={24} />
+                    <Package className="text-orange-500" size={24} />
                     <h3 className="text-2xl font-bold text-gray-900">Produits à stock faible</h3>
                   </div>
                   <div className="flex gap-2">
@@ -255,9 +264,9 @@ export default function ShoppingList() {
                   {lowStockProducts.map((item) => (
                     <div
                       key={item.id}
-                      className="min-w-[320px] bg-yellow-50 rounded-3xl border-2 border-yellow-200 overflow-hidden hover:shadow-lg transition-all"
+                      className="min-w-[320px] bg-orange-50 rounded-3xl border-2 border-orange-200 overflow-hidden hover:shadow-lg transition-all"
                     >
-                      <div className="relative h-56 bg-yellow-100 rounded-t-3xl flex items-center justify-center">
+                      <div className="relative h-56 bg-orange-100 rounded-t-3xl flex items-center justify-center">
                         {item.image ? (
                           <img
                             src={item.image}
@@ -265,15 +274,15 @@ export default function ShoppingList() {
                             className="w-full h-full object-cover rounded-t-3xl"
                           />
                         ) : (
-                          <div className="w-24 h-24 bg-yellow-200 rounded-full flex items-center justify-center">
-                            <Package className="text-yellow-600" size={48} />
+                          <div className="w-24 h-24 bg-orange-200 rounded-full flex items-center justify-center">
+                            <Package className="text-orange-600" size={48} />
                           </div>
                         )}
                       </div>
                       <div className="p-5 bg-white rounded-b-3xl">
                         <h4 className="font-bold text-xl text-gray-900 mb-1">{item.name}</h4>
                         <p className="text-gray-600 mb-2">{item.category}</p>
-                        <p className="text-sm text-yellow-600 mb-4">
+                        <p className="text-sm text-orange-600 mb-4">
                           📦 Restant: {item.quantity}
                         </p>
                         <button
@@ -282,7 +291,7 @@ export default function ShoppingList() {
                           className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-medium transition-all ${
                             shoppingList.some((i) => i.id === item.id)
                               ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                              : "bg-yellow-400 text-white hover:bg-yellow-500 shadow-md"
+                              : "bg-orange-500 text-white hover:bg-orange-600 shadow-md"
                           }`}
                         >
                           <Plus size={18} />
@@ -381,7 +390,23 @@ export default function ShoppingList() {
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-gray-900 truncate">{item.name}</p>
-                        {item.quantity && <p className="text-sm text-gray-600">{item.quantity}</p>}
+                        <div className="flex items-center gap-2 mt-1">
+                          <button 
+                            onClick={() => updateQuantity(item.id, Math.max(1, (parseInt(item.quantity) || 1) - 1))}
+                            className="w-5 h-5 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded text-xs font-bold transition-colors"
+                          >
+                            -
+                          </button>
+                          <span className="text-sm text-gray-700 font-medium min-w-[20px] text-center">
+                            {item.quantity || "1"}
+                          </span>
+                          <button 
+                            onClick={() => updateQuantity(item.id, (parseInt(item.quantity) || 1) + 1)}
+                            className="w-5 h-5 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded text-xs font-bold transition-colors"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
                       <button
                         onClick={() => removeFromList(item.id)}
