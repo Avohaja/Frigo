@@ -260,6 +260,29 @@ app.delete('/api/recipes/:id', async (req, res) => {
   }
 });
 
+// UPDATE product quantity only
+app.patch('/api/products/:id/quantity', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { quantity, status } = req.body;
+    
+    const result = await pool.query(
+      'UPDATE products SET quantity = $1, status = $2 WHERE id = $3 RETURNING *',
+      [quantity, status, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+

@@ -3,7 +3,7 @@ import { Search, Edit2, Trash2, ChevronDown, Plus, Minus } from 'lucide-react';
 import { useProducts } from '../../context/ProductContext';
 
 export default function Inventory({ onAddProduct, onEditProduct }) {
-  const { products, deleteProduct, updateProduct } = useProducts();
+  const { products, deleteProduct, updateQ } = useProducts();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [sortBy, setSortBy] = useState('name');
@@ -27,21 +27,18 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
 
   const categories = ['all', ...new Set(products.map(p => p.category))];
 
-const handleQuantity = async (product, change) => {
-  const newQuantity = Math.max(0, product.quantity + change);
+  const handleQuantity = async (product, change) => {
+    const newQuantity = Math.max(0, product.quantity + change);
 
-  if (newQuantity === 0) {
-    if (window.confirm(`La quantité sera à 0. Voulez-vous supprimer ${product.name} ?`)) {
-      await deleteProduct(product.id);
+    if (newQuantity === 0) {
+      if (window.confirm(`La quantité sera à 0. Voulez-vous supprimer ${product.name} ?`)) {
+        await deleteProduct(product.id);
+      }
+      return;
     }
-    return;
-  }
 
-  // Assurez-vous d'appeler la bonne fonction ici
-  await updateQ(product.id, newQuantity);
-};
-
-
+    await updateQ(product.id, newQuantity);
+  };
 
   const getFilteredAndSortedProducts = () => {
     let filtered = products.filter(p => {
@@ -49,23 +46,18 @@ const handleQuantity = async (product, change) => {
       const matchesCategory = filterCategory === 'all' || p.category === filterCategory;
       return matchesSearch && matchesCategory;
     });
+    
     const sorted = [...filtered].sort((a, b) => {
       switch (sortBy) {
-        case 'name':
-          return a.name.localeCompare(b.name);
-        case 'date-asc':
-          return new Date(a.expiration) - new Date(b.expiration);
-        case 'date-desc':
-          return new Date(b.expiration) - new Date(a.expiration);
-        case 'quantity-asc':
-          return a.quantity - b.quantity;
-        case 'quantity-desc':
-          return b.quantity - a.quantity;
+        case 'name': return a.name.localeCompare(b.name);
+        case 'date-asc': return new Date(a.expiration) - new Date(b.expiration);
+        case 'date-desc': return new Date(b.expiration) - new Date(a.expiration);
+        case 'quantity-asc': return a.quantity - b.quantity;
+        case 'quantity-desc': return b.quantity - a.quantity;
         case 'status':
-          const statusOrder = { expired: 0, expiring: 1, low: 2, fresh: 3 };
-          return statusOrder[a.status] - statusOrder[b.status];
-        default:
-          return 0;
+          const order = { expired: 0, expiring: 1, low: 2, fresh: 3 };
+          return order[a.status] - order[b.status];
+        default: return 0;
       }
     });
     return sorted;
@@ -83,16 +75,18 @@ const handleQuantity = async (product, change) => {
     }
   };
 
+  const filteredProducts = getFilteredAndSortedProducts();
+
   return (
     <div className="bg-gray-50">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Page Title */}
+        
         <div className="mb-6">
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Inventaire</h2>
           <p className="text-gray-600 text-sm sm:text-base">Gérez vos produits et réduisez le gaspillage.</p>
         </div>
 
-        {/* Search and Actions Bar */}
+        {/* Search & Filters */}
         <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-3">
           <div className="w-full sm:flex-1 sm:max-w-md relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
@@ -101,14 +95,14 @@ const handleQuantity = async (product, change) => {
               placeholder="Rechercher un produit..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm"
             />
           </div>
 
-          {/* Filters and Sort */}
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <div className="flex gap-2">
-              {/* Filter by Category Dropdown */}
+
+              {/* CATEGORY FILTER */}
               <div className="relative w-full sm:w-auto">
                 <button
                   onClick={() => {
@@ -122,6 +116,7 @@ const handleQuantity = async (product, change) => {
                   </span>
                   <ChevronDown size={16} className="text-gray-500" />
                 </button>
+
                 {showCategoryDropdown && (
                   <div className="absolute top-full mt-1 right-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 w-full sm:w-48">
                     {categories.map((category) => (
@@ -142,7 +137,7 @@ const handleQuantity = async (product, change) => {
                 )}
               </div>
 
-              {/* Sort Dropdown */}
+              {/* SORT */}
               <div className="relative w-full sm:w-auto">
                 <button
                   onClick={() => {
@@ -156,6 +151,7 @@ const handleQuantity = async (product, change) => {
                   </span>
                   <ChevronDown size={16} className="text-gray-500" />
                 </button>
+
                 {showSortDropdown && (
                   <div className="absolute top-full mt-1 right-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 w-full sm:w-48">
                     {[
@@ -182,72 +178,99 @@ const handleQuantity = async (product, change) => {
                   </div>
                 )}
               </div>
+
             </div>
 
-            {/* Add Product Button */}
             <button
               onClick={onAddProduct}
               className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium text-sm"
             >
               <Plus size={16} />
-              <span className="whitespace-nowrap">Ajouter Produit</span>
+              Ajouter Produit
             </button>
           </div>
         </div>
 
-        {/* Table */}
+        {/* TABLE */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[700px]">
+            <table className="table-fixed w-full min-w-[850px]">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-xs sm:text-sm font-semibold text-gray-700">Produit</th>
-                  <th className="text-left py-3 px-4 text-xs sm:text-sm font-semibold text-gray-700">Catégorie</th>
-                  <th className="text-left py-3 px-4 text-xs sm:text-sm font-semibold text-gray-700">Péremption</th>
-                  <th className="text-left py-3 px-4 text-xs sm:text-sm font-semibold text-gray-700">Quantité</th>
-                  <th className="text-left py-3 px-4 text-xs sm:text-sm font-semibold text-gray-700">Statut</th>
-                  <th className="text-left py-3 px-4 text-xs sm:text-sm font-semibold text-gray-700">Actions</th>
+                <tr className="border-b border-gray-200 bg-gray-50">
+
+                  <th className="py-3 px-4 text-sm font-semibold text-gray-700 w-[180px]">Produit</th>
+                  <th className="py-3 px-4 text-sm font-semibold text-gray-700 w-[140px]">Catégorie</th>
+                  <th className="py-3 px-4 text-sm font-semibold text-gray-700 w-[130px]">Péremption</th>
+                  <th className="py-3 px-4 text-sm font-semibold text-gray-700 w-[90px]">Quantité</th>
+                  <th className="py-3 px-4 text-sm font-semibold text-gray-700 w-[130px] text-center">Statut</th>
+                  <th className="py-3 px-4 text-sm font-semibold text-gray-700 w-[100px]">Quantité +/-</th>
+                  <th className="py-3 px-4 text-sm font-semibold text-gray-700 w-[120px]">Actions</th>
+
                 </tr>
               </thead>
+
               <tbody>
-                {getFilteredAndSortedProducts().length === 0 ? (
+                {filteredProducts.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="py-6 text-center text-gray-500 text-sm">
+                    <td colSpan="7" className="py-6 text-center text-gray-500 text-sm">
                       Aucun produit trouvé
                     </td>
                   </tr>
                 ) : (
-                  getFilteredAndSortedProducts().map((product) => {
+                  filteredProducts.map((product) => {
                     const statusConfig = getStatusConfig(product.status);
+
                     return (
                       <tr key={product.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4 text-gray-900 font-medium text-sm">{product.name}</td>
-                        <td className="py-3 px-4 text-gray-600 text-sm">{product.category}</td>
-                        <td className="py-3 px-4 text-gray-600 text-sm">{formatDate(product.expiration)}</td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            
-                            <span className="text-gray-900 font-medium text-sm min-w-[30px] text-center">
-                              {product.quantity}
-                            </span>
-                            
-                          </div>
+
+                        <td className="py-3 px-4 text-gray-900 text-sm w-[180px]">{product.name}</td>
+                        <td className="py-3 px-4 text-gray-600 text-sm w-[140px]">{product.category}</td>
+                        <td className="py-3 px-4 text-gray-600 text-sm w-[130px]">{formatDate(product.expiration)}</td>
+
+                        <td className="py-3 px-4 text-center text-gray-900 font-medium text-sm w-[90px]">
+                          {product.quantity}
                         </td>
-                        <td className="py-3 px-4">
+
+                        <td className="py-3 px-4 w-[130px] text-center">
                           <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full ${statusConfig.color} text-xs`}>
                             <div className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`}></div>
                             <span className="font-medium">{statusConfig.label}</span>
                           </div>
                         </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-1.5">
+
+                        {/* Quantity controls */}
+                        <td className="py-3 px-4 w-[140px]">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleQuantity(product, -1)}
+                              className="p-1 text-gray-600 hover:bg-gray-100 rounded"
+                            >
+                              <Minus size={16} />
+                            </button>
+
+                            <span className="text-gray-900 font-medium text-sm min-w-[30px] text-center">
+                              {product.quantity}
+                            </span>
+
+                            <button
+                              onClick={() => handleQuantity(product, 1)}
+                              className="p-1 text-gray-600 hover:bg-gray-100 rounded"
+                            >
+                              <Plus size={16} />
+                            </button>
+                          </div>
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-3 px-4 w-[120px]">
+                          <div className="flex items-center gap-2">
                             <button
                               onClick={() => onEditProduct(product.id)}
                               className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg"
-                              title="Modifier"
                             >
                               <Edit2 size={16} />
                             </button>
+
                             <button
                               onClick={() => {
                                 if (window.confirm(`Êtes-vous sûr de vouloir supprimer ${product.name} ?`)) {
@@ -255,26 +278,12 @@ const handleQuantity = async (product, change) => {
                                 }
                               }}
                               className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"
-                              title="Supprimer"
                             >
                               <Trash2 size={16} />
                             </button>
-                            <button
-                              onClick={() => handleQuantity(product, -1)}
-                              className="p-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
-                              title="Diminuer la quantité"
-                            >
-                              <Minus size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleQuantity(product, 1)}
-                              className="p-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
-                              title="Augmenter la quantité"
-                            >
-                              <Plus size={16} />
-                            </button>
                           </div>
                         </td>
+
                       </tr>
                     );
                   })
@@ -284,9 +293,8 @@ const handleQuantity = async (product, change) => {
           </div>
         </div>
 
-        {/* Results count */}
         <div className="mt-3 text-xs sm:text-sm text-gray-600">
-          {getFilteredAndSortedProducts().length} produit(s) affiché(s) sur {products.length} total
+          {filteredProducts.length} produit(s) affiché(s) sur {products.length} total
         </div>
       </main>
     </div>
