@@ -23,6 +23,9 @@ export const RecipeProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await fetch(`${API_URL}/recipes`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       setRecipes(data);
     } catch (error) {
@@ -37,8 +40,11 @@ export const RecipeProvider = ({ children }) => {
       const response = await fetch(`${API_URL}/recipes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...recipe, isUsed: false }),
+        body: JSON.stringify(recipe),
       });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const newRecipe = await response.json();
       await fetchRecipes();
       return newRecipe;
@@ -55,6 +61,9 @@ export const RecipeProvider = ({ children }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedRecipe),
       });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const updated = await response.json();
       await fetchRecipes();
       return updated;
@@ -66,9 +75,12 @@ export const RecipeProvider = ({ children }) => {
 
   const deleteRecipe = async (id) => {
     try {
-      await fetch(`${API_URL}/recipes/${id}`, {
+      const response = await fetch(`${API_URL}/recipes/${id}`, {
         method: 'DELETE',
       });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       await fetchRecipes();
     } catch (error) {
       console.error('Error deleting recipe:', error);
@@ -85,6 +97,9 @@ export const RecipeProvider = ({ children }) => {
       const response = await fetch(`${API_URL}/recipes/${id}/toggle`, {
         method: 'PATCH',
       });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const updated = await response.json();
       await fetchRecipes();
       return updated;
@@ -139,5 +154,3 @@ export const RecipeProvider = ({ children }) => {
     </RecipeContext.Provider>
   );
 };
-
-export default RecipeContext;

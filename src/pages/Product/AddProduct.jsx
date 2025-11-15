@@ -7,7 +7,8 @@ export default function AddProduct({ onBack }) {
   const [form, setForm] = useState({
     name: "",
     category: "",
-    quantity: "",
+    quantityValue: "",
+    quantityUnit: "",
     expiration: "",
   });
 
@@ -18,14 +19,17 @@ export default function AddProduct({ onBack }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (form.name && form.category && form.quantity && form.expiration) {
+    if (form.name && form.category && form.quantityValue && form.quantityUnit && form.expiration) {
       addProduct({
         name: form.name,
         category: form.category,
-        quantity: parseInt(form.quantity),
+        quantity: { 
+          value: parseInt(form.quantityValue), 
+          unit: form.quantityUnit 
+        },
         expiration: form.expiration
       });
-      setForm({ name: "", category: "", quantity: "", expiration: "" });
+      setForm({ name: "", category: "", quantityValue: "", quantityUnit: "", expiration: "" });
       alert(`Produit ajouté : ${form.name}`);
       onBack();
     } else {
@@ -35,14 +39,13 @@ export default function AddProduct({ onBack }) {
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-8">
-      <button 
+      <button
         onClick={onBack}
         className="flex items-center gap-2 text-green-600 hover:text-green-700 font-medium mb-6"
       >
         <ArrowLeft size={20} />
         Retour à l'inventaire
       </button>
-
       <div className="bg-white shadow-md rounded-2xl p-8">
         <h2 className="text-3xl font-bold mb-6 text-gray-800">Ajouter un produit</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -59,7 +62,6 @@ export default function AddProduct({ onBack }) {
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
             />
           </div>
-
           {/* Catégorie */}
           <div>
             <label className="block text-gray-700 mb-1 font-medium">Catégorie</label>
@@ -78,22 +80,37 @@ export default function AddProduct({ onBack }) {
               <option value="Autres">Autres</option>
             </select>
           </div>
-
-          {/* Quantité */}
+          {/* Quantité (valeur) */}
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Quantité</label>
+            <label className="block text-gray-700 mb-1 font-medium">Quantité (valeur)</label>
             <input
               type="number"
-              name="quantity"
-              value={form.quantity}
+              name="quantityValue"
+              value={form.quantityValue}
               onChange={handleChange}
-              placeholder="Ex: 2"
+              placeholder="Ex: 1"
               min="1"
               required
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
             />
           </div>
-
+          {/* Quantité (unité) */}
+          <div>
+            <label className="block text-gray-700 mb-1 font-medium">Unité</label>
+            <select
+              name="quantityUnit"
+              value={form.quantityUnit}
+              onChange={handleChange}
+              required
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
+            >
+              <option value="">Sélectionnez une unité</option>
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="L">L</option>
+              <option value="unité">unité</option>
+            </select>
+          </div>
           {/* Date de péremption */}
           <div>
             <label className="block text-gray-700 mb-1 font-medium">Date de péremption</label>
@@ -106,7 +123,6 @@ export default function AddProduct({ onBack }) {
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
             />
           </div>
-
           {/* Boutons */}
           <div className="flex flex-col sm:flex-row gap-4 mt-6">
             <button

@@ -18,7 +18,7 @@ export default function ShoppingList() {
       .map(p => ({
         id: p.id,
         name: p.name,
-        quantity: `${p.quantity}`,
+        quantity: p.quantity,
         category: p.category,
         status: p.status,
         type: 'expired',
@@ -32,7 +32,7 @@ export default function ShoppingList() {
       .map(p => ({
         id: p.id,
         name: p.name,
-        quantity: `${p.quantity}`,
+        quantity: p.quantity,
         category: p.category,
         status: p.status,
         type: 'lowStock',
@@ -42,7 +42,12 @@ export default function ShoppingList() {
 
   const addToList = (item) => {
     if (!shoppingList.find((i) => i.id === item.id)) {
-      setShoppingList([...shoppingList, { ...item, added: true }]);
+      setShoppingList([...shoppingList, { 
+        ...item, 
+        added: true,
+        // Ensure quantity has proper structure
+        quantity: typeof item.quantity === 'object' ? item.quantity : { value: item.quantity, unit: 'unité' }
+      }]);
     }
   };
 
@@ -51,7 +56,7 @@ export default function ShoppingList() {
       const newItem = {
         id: Date.now(),
         name: manualItem,
-        quantity: manualQuantity || "1",
+        quantity: manualQuantity ? { value: manualQuantity, unit: 'unité' } : { value: 1, unit: 'unité' },
         manual: true,
       };
       setShoppingList([...shoppingList, newItem]);
@@ -64,22 +69,40 @@ export default function ShoppingList() {
     setShoppingList(shoppingList.filter((item) => item.id !== id));
   };
 
-  const updateQuantity = (itemId, newQuantity) => {
+  const updateQuantity = (itemId, change) => {
     setShoppingList(prevList => 
-      prevList.map(item => 
-        item.id === itemId 
-          ? { ...item, quantity: newQuantity.toString() }
-          : item
-      )
+      prevList.map(item => {
+        if (item.id === itemId) {
+          const currentValue = parseInt(item.quantity.value) || 0;
+          const newValue = Math.max(0, currentValue + change);
+          
+          return {
+            ...item,
+            quantity: {
+              ...item.quantity,
+              value: newValue.toString()
+            }
+          };
+        }
+        return item;
+      })
     );
   };
 
   const scrollLeft = (section) => {
-    setScrollPosition((prev) => ({ ...prev, [section]: prev[section] - 340 }));
+    setScrollPosition((prev) => ({ ...prev, [section]: Math.max(0, prev[section] - 340) }));
   };
 
   const scrollRight = (section) => {
     setScrollPosition((prev) => ({ ...prev, [section]: prev[section] + 340 }));
+  };
+
+  // Helper function to format quantity display
+  const formatQuantity = (quantity) => {
+    if (typeof quantity === 'object' && quantity !== null) {
+      return `${quantity.value} ${quantity.unit}`;
+    }
+    return quantity;
   };
 
   return (
@@ -101,6 +124,44 @@ export default function ShoppingList() {
         {/* Ingrédients manquants */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
+
+            {/* Ajout manuel */}
+            <div className="bg-white rounded-3xl shadow-lg p-6">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Ajouter un article personnalisé</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Nom de l'article</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Pain complet"
+                    value={manualItem}
+                    onChange={(e) => setManualItem(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && addManualItem()}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Quantité (optionnelle)</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: 1 unité, 500g, 2L"
+                    value={manualQuantity}
+                    onChange={(e) => setManualQuantity(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && addManualItem()}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+                <button
+                  onClick={addManualItem}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-xl transition-all shadow-md"
+                >
+                  <Plus size={20} />
+                  Ajouter à ma liste
+                </button>
+              </div>
+            </div>
+
+            {/* Ingrédients manquants des recettes */}
             <div className="bg-white rounded-3xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
@@ -141,7 +202,7 @@ export default function ShoppingList() {
                       </div>
                       <div className="p-5 bg-white rounded-b-3xl">
                         <h4 className="font-bold text-xl text-gray-900 mb-1">{ingredient.name}</h4>
-                        <p className="text-gray-600 mb-4">{ingredient.quantity}</p>
+                        <p className="text-gray-600 mb-4">{formatQuantity(ingredient.quantity)}</p>
                         <p className="text-sm text-gray-500 mb-4">Recette: {ingredient.recipeName}</p>
                         <button
                           onClick={() => addToList(ingredient)}
@@ -283,7 +344,7 @@ export default function ShoppingList() {
                         <h4 className="font-bold text-xl text-gray-900 mb-1">{item.name}</h4>
                         <p className="text-gray-600 mb-2">{item.category}</p>
                         <p className="text-sm text-orange-600 mb-4">
-                          📦 Restant: {item.quantity}
+                          📦 Restant: {formatQuantity(item.quantity)}
                         </p>
                         <button
                           onClick={() => addToList(item)}
@@ -303,42 +364,6 @@ export default function ShoppingList() {
                 </div>
               </div>
             )}
-
-            {/* Ajout manuel */}
-            <div className="bg-white rounded-3xl shadow-lg p-6">
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Ajouter un article personnalisé</h3>
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Nom de l'article</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: Pain complet"
-                    value={manualItem}
-                    onChange={(e) => setManualItem(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && addManualItem()}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Quantité (optionnelle)</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: 1 unité, 500g, 2L"
-                    value={manualQuantity}
-                    onChange={(e) => setManualQuantity(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && addManualItem()}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
-                </div>
-                <button
-                  onClick={addManualItem}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-xl transition-all shadow-md"
-                >
-                  <Plus size={20} />
-                  Ajouter à ma liste
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Ma liste */}
@@ -392,16 +417,16 @@ export default function ShoppingList() {
                         <p className="font-semibold text-gray-900 truncate">{item.name}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <button 
-                            onClick={() => updateQuantity(item.id, Math.max(1, (parseInt(item.quantity) || 1) - 1))}
+                            onClick={() => updateQuantity(item.id, -1)}
                             className="w-5 h-5 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded text-xs font-bold transition-colors"
                           >
                             -
                           </button>
-                          <span className="text-sm text-gray-700 font-medium min-w-[20px] text-center">
-                            {item.quantity || "1"}
+                          <span className="text-sm text-gray-700 font-medium min-w-[60px] text-center">
+                            {formatQuantity(item.quantity)}
                           </span>
                           <button 
-                            onClick={() => updateQuantity(item.id, (parseInt(item.quantity) || 1) + 1)}
+                            onClick={() => updateQuantity(item.id, 1)}
                             className="w-5 h-5 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded text-xs font-bold transition-colors"
                           >
                             +

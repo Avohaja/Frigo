@@ -193,7 +193,8 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
                         <div className="flex flex-wrap gap-1">
                           {recipe.missingIngredients.map((ingredient, idx) => (
                             <span key={idx} className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full">
-                              {ingredient.name} ({ingredient.quantity})
+                              {ingredient.name} 
+                              {ingredient.quantity && ` (${ingredient.quantity.value} ${ingredient.quantity.unit})`}
                             </span>
                           ))}
                         </div>

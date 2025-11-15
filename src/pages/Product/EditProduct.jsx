@@ -7,7 +7,8 @@ export default function EditProduct({ productId, onBack }) {
   const [form, setForm] = useState({
     name: "",
     category: "",
-    quantity: "",
+    quantityValue: "",
+    quantityUnit: "",
     expiration: "",
   });
 
@@ -15,7 +16,6 @@ export default function EditProduct({ productId, onBack }) {
     if (productId) {
       const product = getProduct(productId);
       if (product) {
-        // Convert ISO date to yyyy-MM-dd format
         const formatDateForInput = (dateString) => {
           const date = new Date(dateString);
           const year = date.getFullYear();
@@ -23,11 +23,11 @@ export default function EditProduct({ productId, onBack }) {
           const day = String(date.getDate()).padStart(2, '0');
           return `${year}-${month}-${day}`;
         };
-
         setForm({
           name: product.name,
-          category: product.category,
-          quantity: product.quantity.toString(),
+          category: product.category || "",
+          quantityValue: product.quantity.value.toString(),
+          quantityUnit: product.quantity.unit,
           expiration: formatDateForInput(product.expiration),
         });
       }
@@ -41,11 +41,14 @@ export default function EditProduct({ productId, onBack }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (form.name && form.category && form.quantity && form.expiration) {
+    if (form.name && form.category && form.quantityValue && form.quantityUnit && form.expiration) {
       updateProduct(productId, {
         name: form.name,
         category: form.category,
-        quantity: parseInt(form.quantity),
+        quantity: { 
+          value: parseInt(form.quantityValue), 
+          unit: form.quantityUnit 
+        },
         expiration: form.expiration
       });
       alert(`Produit modifié : ${form.name}`);
@@ -57,14 +60,13 @@ export default function EditProduct({ productId, onBack }) {
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-8">
-      <button 
+      <button
         onClick={onBack}
         className="flex items-center gap-2 text-green-600 hover:text-green-700 font-medium mb-6"
       >
         <ArrowLeft size={20} />
         Retour à l'inventaire
       </button>
-
       <div className="bg-white shadow-md rounded-2xl p-8">
         <h2 className="text-3xl font-bold mb-6 text-gray-800">Modifier le produit</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -81,7 +83,6 @@ export default function EditProduct({ productId, onBack }) {
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
             />
           </div>
-
           {/* Catégorie */}
           <div>
             <label className="block text-gray-700 mb-1 font-medium">Catégorie</label>
@@ -100,22 +101,37 @@ export default function EditProduct({ productId, onBack }) {
               <option value="Autres">Autres</option>
             </select>
           </div>
-
-          {/* Quantité */}
+          {/* Quantité (valeur) */}
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Quantité</label>
+            <label className="block text-gray-700 mb-1 font-medium">Quantité (valeur)</label>
             <input
               type="number"
-              name="quantity"
-              value={form.quantity}
+              name="quantityValue"
+              value={form.quantityValue}
               onChange={handleChange}
-              placeholder="Ex: 2"
+              placeholder="Ex: 1"
               min="1"
               required
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
             />
           </div>
-
+          {/* Quantité (unité) */}
+          <div>
+            <label className="block text-gray-700 mb-1 font-medium">Unité</label>
+            <select
+              name="quantityUnit"
+              value={form.quantityUnit}
+              onChange={handleChange}
+              required
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
+            >
+              <option value="">Sélectionnez une unité</option>
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="L">L</option>
+              <option value="unité">unité</option>
+            </select>
+          </div>
           {/* Date de péremption */}
           <div>
             <label className="block text-gray-700 mb-1 font-medium">Date de péremption</label>
@@ -128,7 +144,6 @@ export default function EditProduct({ productId, onBack }) {
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
             />
           </div>
-
           {/* Boutons */}
           <div className="flex flex-col sm:flex-row gap-4 mt-6">
             <button

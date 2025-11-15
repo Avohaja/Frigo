@@ -24,7 +24,28 @@ const pool = new Pool({
 app.get('/api/products', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM products ORDER BY expiration ASC');
-    res.json(result.rows);
+    
+    // Parse quantity if it's stored as JSON string
+    const products = result.rows.map(product => {
+      let quantity = product.quantity;
+      
+      // If quantity is a string, try to parse it as JSON
+      if (typeof quantity === 'string') {
+        try {
+          quantity = JSON.parse(quantity);
+        } catch (e) {
+          // If parsing fails, keep it as string or convert to object
+          quantity = { value: parseInt(quantity) || 0, unit: 'unité' };
+        }
+      }
+      
+      return {
+        ...product,
+        quantity: quantity
+      };
+    });
+    
+    res.json(products);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -36,7 +57,25 @@ app.get('/api/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query('SELECT * FROM products WHERE id = $1', [id]);
-    res.json(result.rows[0]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    let product = result.rows[0];
+    let quantity = product.quantity;
+    
+    // Parse quantity if it's stored as JSON string
+    if (typeof quantity === 'string') {
+      try {
+        quantity = JSON.parse(quantity);
+      } catch (e) {
+        quantity = { value: parseInt(quantity) || 0, unit: 'unité' };
+      }
+    }
+    
+    product.quantity = quantity;
+    res.json(product);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -47,11 +86,32 @@ app.get('/api/products/:id', async (req, res) => {
 app.post('/api/products', async (req, res) => {
   try {
     const { name, category, expiration, quantity, status } = req.body;
+    
+    // Handle quantity as JSON object
+    let quantityValue;
+    if (typeof quantity === 'object' && quantity !== null) {
+      quantityValue = quantity;
+    } else {
+      // If quantity is not an object, create one
+      quantityValue = { value: parseInt(quantity) || 1, unit: 'unité' };
+    }
+    
     const result = await pool.query(
       'INSERT INTO products (name, category, expiration, quantity, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [name, category, expiration, quantity, status]
+      [name, category, expiration, quantityValue, status || 'fresh']
     );
-    res.json(result.rows[0]);
+    
+    // Parse quantity for response
+    let responseProduct = result.rows[0];
+    if (typeof responseProduct.quantity === 'string') {
+      try {
+        responseProduct.quantity = JSON.parse(responseProduct.quantity);
+      } catch (e) {
+        responseProduct.quantity = quantityValue;
+      }
+    }
+    
+    res.json(responseProduct);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -63,12 +123,36 @@ app.put('/api/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { name, category, expiration, quantity, status } = req.body;
+    
+    // Handle quantity as JSON object
+    let quantityValue;
+    if (typeof quantity === 'object' && quantity !== null) {
+      quantityValue = quantity;
+    } else {
+      quantityValue = { value: parseInt(quantity) || 1, unit: 'unité' };
+    }
+    
     const result = await pool.query(
       'UPDATE products SET name = $1, category = $2, expiration = $3, quantity = $4, status = $5 WHERE id = $6 RETURNING *',
-      [name, category, expiration, quantity, status, id]
+      [name, category, expiration, quantityValue, status || 'fresh', id]
     );
-    console.log(result.rows[0]);
-    res.json(result.rows[0]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    // Parse quantity for response
+    let responseProduct = result.rows[0];
+    if (typeof responseProduct.quantity === 'string') {
+      try {
+        responseProduct.quantity = JSON.parse(responseProduct.quantity);
+      } catch (e) {
+        responseProduct.quantity = quantityValue;
+      }
+    }
+    
+    console.log(responseProduct);
+    res.json(responseProduct);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -84,6 +168,47 @@ app.delete('/api/products/:id', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// UPDATE product quantity only
+app.patch('/api/products/:id/quantity', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { quantity } = req.body;
+    
+    console.log('PATCH /api/products/:id/quantity - ID:', id);
+    console.log('Received quantity:', quantity);
+    
+    // Vérifiez que la quantité est un objet JSON valide
+    if (!quantity || typeof quantity !== 'object') {
+      return res.status(400).json({ error: 'Invalid quantity format' });
+    }
+    
+    const result = await pool.query(
+      'UPDATE products SET quantity = $1 WHERE id = $2 RETURNING *',
+      [quantity, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    // Parse quantity for response
+    let responseProduct = result.rows[0];
+    if (typeof responseProduct.quantity === 'string') {
+      try {
+        responseProduct.quantity = JSON.parse(responseProduct.quantity);
+      } catch (e) {
+        responseProduct.quantity = quantity;
+      }
+    }
+    
+    console.log('Product updated:', responseProduct);
+    res.json(responseProduct);
+  } catch (err) {
+    console.error('Error in PATCH /api/products/:id/quantity:', err);
+    res.status(500).json({ error: 'Server error: ' + err.message });
   }
 });
 
@@ -160,7 +285,17 @@ app.post('/api/recipes', async (req, res) => {
     }
 
     await client.query('COMMIT');
-    res.json(recipeResult.rows[0]);
+    
+    // Return the complete recipe
+    const completeRecipe = {
+      ...recipeResult.rows[0],
+      isUsed: false,
+      availableIngredients: availableIngredients || [],
+      missingIngredients: missingIngredients || [],
+      steps: steps || []
+    };
+    
+    res.json(completeRecipe);
   } catch (err) {
     await client.query('ROLLBACK');
     console.error(err);
@@ -219,8 +354,18 @@ app.put('/api/recipes/:id', async (req, res) => {
     }
 
     await client.query('COMMIT');
-    console.log(recipeResult.rows[0]);
-    res.json(recipeResult.rows[0]);
+    
+    // Return complete updated recipe
+    const completeRecipe = {
+      ...recipeResult.rows[0],
+      isUsed: isUsed,
+      availableIngredients: availableIngredients || [],
+      missingIngredients: missingIngredients || [],
+      steps: steps || []
+    };
+    
+    console.log(completeRecipe);
+    res.json(completeRecipe);
   } catch (err) {
     await client.query('ROLLBACK');
     console.error(err);
@@ -260,29 +405,7 @@ app.delete('/api/recipes/:id', async (req, res) => {
   }
 });
 
-// UPDATE product quantity only
-app.patch('/api/products/:id/quantity', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { quantity, status } = req.body;
-    
-    const result = await pool.query(
-      'UPDATE products SET quantity = $1, status = $2 WHERE id = $3 RETURNING *',
-      [quantity, status, id]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-    
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
+// Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-

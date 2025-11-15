@@ -19,7 +19,7 @@ function RecipeForm({ recipeId, onBack }) {
     isUsed: false
   });
 
-  const [currentMissingIngredient, setCurrentMissingIngredient] = useState("");
+  const [currentMissingIngredient, setCurrentMissingIngredient] = useState({ name: "", quantity: { value: "", unit: "unité" } });
   const [currentStep, setCurrentStep] = useState("");
   const [showProductSelector, setShowProductSelector] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,7 +28,16 @@ function RecipeForm({ recipeId, onBack }) {
     if (recipeId) {
       const recipe = getRecipe(recipeId);
       if (recipe) {
-        setForm(recipe);
+        setForm({
+          ...recipe,
+          // Ensure ingredients have proper structure
+          availableIngredients: recipe.availableIngredients?.map(ing => 
+            typeof ing === 'string' ? { name: ing, quantity: { value: 1, unit: "unité" } } : ing
+          ) || [],
+          missingIngredients: recipe.missingIngredients?.map(ing => 
+            typeof ing === 'string' ? { name: ing, quantity: { value: 1, unit: "unité" } } : ing
+          ) || []
+        });
       }
     }
   }, [recipeId, getRecipe]);
@@ -42,42 +51,78 @@ function RecipeForm({ recipeId, onBack }) {
   const getFilteredProducts = () => {
     return products.filter(product => 
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      !form.availableIngredients.includes(product.name)
+      !form.availableIngredients.some(ing => ing.name === product.name)
     );
   };
 
   // Ajouter un produit disponible depuis l'inventaire
-  const addProductIngredient = (productName) => {
-    if (!form.availableIngredients.includes(productName)) {
+  const addProductIngredient = (product) => {
+    if (!form.availableIngredients.some(ing => ing.name === product.name)) {
+      const newIngredient = {
+        name: product.name,
+        quantity: product.quantity // This is now an object {value, unit}
+      };
       setForm({
         ...form,
-        availableIngredients: [...form.availableIngredients, productName]
+        availableIngredients: [...form.availableIngredients, newIngredient]
       });
     }
     setSearchTerm("");
+    setShowProductSelector(false);
   };
 
-  const removeIngredient = (index) => {
-    setForm({
-      ...form,
-      availableIngredients: form.availableIngredients.filter((_, i) => i !== index)
-    });
-  };
-
-  const addMissingIngredient = () => {
-    if (currentMissingIngredient.trim()) {
+  const removeIngredient = (index, type) => {
+    if (type === 'available') {
       setForm({
         ...form,
-        missingIngredients: [...form.missingIngredients, currentMissingIngredient.trim()]
+        availableIngredients: form.availableIngredients.filter((_, i) => i !== index)
       });
-      setCurrentMissingIngredient("");
+    } else {
+      setForm({
+        ...form,
+        missingIngredients: form.missingIngredients.filter((_, i) => i !== index)
+      });
     }
   };
 
-  const removeMissingIngredient = (index) => {
+  const handleMissingIngredientChange = (field, value) => {
+    setCurrentMissingIngredient(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleMissingQuantityChange = (field, value) => {
+    setCurrentMissingIngredient(prev => ({
+      ...prev,
+      quantity: {
+        ...prev.quantity,
+        [field]: value
+      }
+    }));
+  };
+
+  const addMissingIngredient = () => {
+    if (currentMissingIngredient.name.trim()) {
+      const newIngredient = {
+        name: currentMissingIngredient.name.trim(),
+        quantity: {
+          value: parseInt(currentMissingIngredient.quantity.value) || 1,
+          unit: currentMissingIngredient.quantity.unit || "unité"
+        }
+      };
+      setForm({
+        ...form,
+        missingIngredients: [...form.missingIngredients, newIngredient]
+      });
+      setCurrentMissingIngredient({ name: "", quantity: { value: "", unit: "unité" } });
+    }
+  };
+
+  const removeStep = (index) => {
     setForm({
       ...form,
-      missingIngredients: form.missingIngredients.filter((_, i) => i !== index)
+      steps: form.steps.filter((_, i) => i !== index)
     });
   };
 
@@ -91,24 +136,21 @@ function RecipeForm({ recipeId, onBack }) {
     }
   };
 
-  const removeStep = (index) => {
-    setForm({
-      ...form,
-      steps: form.steps.filter((_, i) => i !== index)
-    });
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (form.title && form.type && form.time && form.difficulty) {
-      if (recipeId) {
-        updateRecipe(recipeId, form);
-        alert(`Recette modifiée : ${form.title}`);
-      } else {
-        addRecipe(form);
-        alert(`Recette ajoutée : ${form.title}`);
+      try {
+        if (recipeId) {
+          await updateRecipe(recipeId, form);
+          alert(`Recette modifiée : ${form.title}`);
+        } else {
+          await addRecipe(form);
+          alert(`Recette ajoutée : ${form.title}`);
+        }
+        onBack();
+      } catch (error) {
+        alert("Erreur lors de la sauvegarde de la recette");
       }
-      onBack();
     } else {
       alert("Veuillez remplir tous les champs obligatoires");
     }
@@ -226,15 +268,14 @@ function RecipeForm({ recipeId, onBack }) {
                       <button
                         key={product.id}
                         type="button"
-                        onClick={() => {
-                          addProductIngredient(product.name);
-                          setShowProductSelector(false);
-                        }}
+                        onClick={() => addProductIngredient(product)}
                         className="w-full text-left px-4 py-3 hover:bg-green-50 flex items-center justify-between group"
                       >
                         <div>
                           <p className="font-medium text-gray-900">{product.name}</p>
-                          <p className="text-sm text-gray-600">{product.category} - Quantité: {product.quantity}</p>
+                          <p className="text-sm text-gray-600">
+                            {product.category} - {product.quantity.value} {product.quantity.unit}
+                          </p>
                         </div>
                         <Plus size={18} className="text-green-600 opacity-0 group-hover:opacity-100" />
                       </button>
@@ -244,19 +285,24 @@ function RecipeForm({ recipeId, onBack }) {
               </div>
             </div>
             
-            <div className="flex flex-wrap gap-2">
+            <div className="space-y-2">
               {form.availableIngredients.map((ingredient, index) => (
-                <span key={index} className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
-                  <Check size={14} />
-                  {ingredient}
+                <div key={index} className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                  <Check size={16} className="text-green-600 flex-shrink-0" />
+                  <div className="flex-1">
+                    <span className="font-medium text-green-700">{ingredient.name}</span>
+                    <span className="text-sm text-green-600 ml-2">
+                      ({ingredient.quantity.value} {ingredient.quantity.unit})
+                    </span>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => removeIngredient(index)}
-                    className="hover:text-green-900"
+                    onClick={() => removeIngredient(index, 'available')}
+                    className="text-red-600 hover:text-red-800 flex-shrink-0"
                   >
-                    <X size={14} />
+                    <X size={16} />
                   </button>
-                </span>
+                </div>
               ))}
             </div>
             
@@ -270,35 +316,69 @@ function RecipeForm({ recipeId, onBack }) {
           {/* Ingrédients manquants */}
           <div>
             <label className="block text-gray-700 mb-2 font-medium">Ingrédients manquants (optionnel)</label>
-            <div className="flex gap-2 mb-3">
-              <input
-                type="text"
-                value={currentMissingIngredient}
-                onChange={(e) => setCurrentMissingIngredient(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addMissingIngredient())}
-                placeholder="Ex: Poireaux, Fromage..."
-                className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={addMissingIngredient}
-                className="px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 font-medium"
-              >
-                <Plus size={20} />
-              </button>
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-2 mb-3">
+              <div className="md:col-span-5">
+                <input
+                  type="text"
+                  value={currentMissingIngredient.name}
+                  onChange={(e) => handleMissingIngredientChange('name', e.target.value)}
+                  placeholder="Nom de l'ingrédient..."
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
+                />
+              </div>
+              <div className="md:col-span-3">
+                <input
+                  type="number"
+                  value={currentMissingIngredient.quantity.value}
+                  onChange={(e) => handleMissingQuantityChange('value', e.target.value)}
+                  placeholder="Quantité"
+                  min="1"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
+                />
+              </div>
+              <div className="md:col-span-3">
+                <select
+                  value={currentMissingIngredient.quantity.unit}
+                  onChange={(e) => handleMissingQuantityChange('unit', e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
+                >
+                  <option value="unité">unité</option>
+                  <option value="g">g</option>
+                  <option value="kg">kg</option>
+                  <option value="mL">mL</option>
+                  <option value="L">L</option>
+                  <option value="cuillère à soupe">cuillère à soupe</option>
+                  <option value="cuillère à café">cuillère à café</option>
+                  <option value="pincée">pincée</option>
+                </select>
+              </div>
+              <div className="md:col-span-1">
+                <button
+                  type="button"
+                  onClick={addMissingIngredient}
+                  className="w-full h-full flex items-center justify-center bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 font-medium"
+                >
+                  <Plus size={20} />
+                </button>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="space-y-2">
               {form.missingIngredients.map((ingredient, index) => (
-                <span key={index} className="inline-flex items-center gap-2 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm">
-                  {ingredient}
+                <div key={index} className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
+                  <div className="flex-1">
+                    <span className="font-medium text-orange-700">{ingredient.name}</span>
+                    <span className="text-sm text-orange-600 ml-2">
+                      ({ingredient.quantity.value} {ingredient.quantity.unit})
+                    </span>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => removeMissingIngredient(index)}
-                    className="hover:text-orange-900"
+                    onClick={() => removeIngredient(index, 'missing')}
+                    className="text-red-600 hover:text-red-800"
                   >
-                    <X size={14} />
+                    <X size={16} />
                   </button>
-                </span>
+                </div>
               ))}
             </div>
           </div>
@@ -332,7 +412,7 @@ function RecipeForm({ recipeId, onBack }) {
                   <button
                     type="button"
                     onClick={() => removeStep(index)}
-                    className="text-red-600 hover:text-red-800"
+                    className="text-red-600 hover:text-red-800 flex-shrink-0"
                   >
                     <X size={18} />
                   </button>

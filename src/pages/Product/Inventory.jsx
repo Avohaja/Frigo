@@ -3,7 +3,7 @@ import { Search, Edit2, Trash2, ChevronDown, Plus, Minus } from 'lucide-react';
 import { useProducts } from '../../context/ProductContext';
 
 export default function Inventory({ onAddProduct, onEditProduct }) {
-  const { products, deleteProduct, updateQ } = useProducts();
+  const { products, deleteProduct, updateQuantity } = useProducts();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [sortBy, setSortBy] = useState('name');
@@ -28,16 +28,19 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
   const categories = ['all', ...new Set(products.map(p => p.category))];
 
   const handleQuantity = async (product, change) => {
-    const newQuantity = Math.max(0, product.quantity + change);
+    const newQuantity = {
+      value: Math.max(0, product.quantity.value + change),
+      unit: product.quantity.unit
+    };
 
-    if (newQuantity === 0) {
+    if (newQuantity.value === 0) {
       if (window.confirm(`La quantité sera à 0. Voulez-vous supprimer ${product.name} ?`)) {
         await deleteProduct(product.id);
       }
       return;
     }
 
-    await updateQ(product.id, newQuantity);
+    await updateQuantity(product.id, newQuantity);
   };
 
   const getFilteredAndSortedProducts = () => {
@@ -46,20 +49,21 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
       const matchesCategory = filterCategory === 'all' || p.category === filterCategory;
       return matchesSearch && matchesCategory;
     });
-    
+
     const sorted = [...filtered].sort((a, b) => {
       switch (sortBy) {
         case 'name': return a.name.localeCompare(b.name);
         case 'date-asc': return new Date(a.expiration) - new Date(b.expiration);
         case 'date-desc': return new Date(b.expiration) - new Date(a.expiration);
-        case 'quantity-asc': return a.quantity - b.quantity;
-        case 'quantity-desc': return b.quantity - a.quantity;
+        case 'quantity-asc': return a.quantity.value - b.quantity.value;
+        case 'quantity-desc': return b.quantity.value - a.quantity.value;
         case 'status':
           const order = { expired: 0, expiring: 1, low: 2, fresh: 3 };
           return order[a.status] - order[b.status];
         default: return 0;
       }
     });
+
     return sorted;
   };
 
@@ -80,7 +84,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
   return (
     <div className="bg-gray-50">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        
         <div className="mb-6">
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Inventaire</h2>
           <p className="text-gray-600 text-sm sm:text-base">Gérez vos produits et réduisez le gaspillage.</p>
@@ -101,7 +104,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
 
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <div className="flex gap-2">
-
               {/* CATEGORY FILTER */}
               <div className="relative w-full sm:w-auto">
                 <button
@@ -116,7 +118,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
                   </span>
                   <ChevronDown size={16} className="text-gray-500" />
                 </button>
-
                 {showCategoryDropdown && (
                   <div className="absolute top-full mt-1 right-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 w-full sm:w-48">
                     {categories.map((category) => (
@@ -151,7 +152,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
                   </span>
                   <ChevronDown size={16} className="text-gray-500" />
                 </button>
-
                 {showSortDropdown && (
                   <div className="absolute top-full mt-1 right-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 w-full sm:w-48">
                     {[
@@ -178,7 +178,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
                   </div>
                 )}
               </div>
-
             </div>
 
             <button
@@ -197,7 +196,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
             <table className="table-fixed w-full min-w-[850px]">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
-
                   <th className="py-3 px-4 text-sm font-semibold text-gray-700 w-[180px]">Produit</th>
                   <th className="py-3 px-4 text-sm font-semibold text-gray-700 w-[140px]">Catégorie</th>
                   <th className="py-3 px-4 text-sm font-semibold text-gray-700 w-[130px]">Péremption</th>
@@ -205,10 +203,8 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
                   <th className="py-3 px-4 text-sm font-semibold text-gray-700 w-[130px] text-center">Statut</th>
                   <th className="py-3 px-4 text-sm font-semibold text-gray-700 w-[100px]">Quantité +/-</th>
                   <th className="py-3 px-4 text-sm font-semibold text-gray-700 w-[120px]">Actions</th>
-
                 </tr>
               </thead>
-
               <tbody>
                 {filteredProducts.length === 0 ? (
                   <tr>
@@ -219,25 +215,20 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
                 ) : (
                   filteredProducts.map((product) => {
                     const statusConfig = getStatusConfig(product.status);
-
                     return (
                       <tr key={product.id} className="border-b border-gray-100 hover:bg-gray-50">
-
                         <td className="py-3 px-4 text-gray-900 text-sm w-[180px]">{product.name}</td>
                         <td className="py-3 px-4 text-gray-600 text-sm w-[140px]">{product.category}</td>
                         <td className="py-3 px-4 text-gray-600 text-sm w-[130px]">{formatDate(product.expiration)}</td>
-
                         <td className="py-3 px-4 text-center text-gray-900 font-medium text-sm w-[90px]">
-                          {product.quantity}
+                          {product.quantity.value} {product.quantity.unit}
                         </td>
-
                         <td className="py-3 px-4 w-[130px] text-center">
                           <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full ${statusConfig.color} text-xs`}>
                             <div className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`}></div>
                             <span className="font-medium">{statusConfig.label}</span>
                           </div>
                         </td>
-
                         {/* Quantity controls */}
                         <td className="py-3 px-4 w-[140px]">
                           <div className="flex items-center gap-2">
@@ -247,11 +238,9 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
                             >
                               <Minus size={16} />
                             </button>
-
                             <span className="text-gray-900 font-medium text-sm min-w-[30px] text-center">
-                              {product.quantity}
+                              {product.quantity.value} {product.quantity.unit}
                             </span>
-
                             <button
                               onClick={() => handleQuantity(product, 1)}
                               className="p-1 text-gray-600 hover:bg-gray-100 rounded"
@@ -260,7 +249,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
                             </button>
                           </div>
                         </td>
-
                         {/* Actions */}
                         <td className="py-3 px-4 w-[120px]">
                           <div className="flex items-center gap-2">
@@ -270,7 +258,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
                             >
                               <Edit2 size={16} />
                             </button>
-
                             <button
                               onClick={() => {
                                 if (window.confirm(`Êtes-vous sûr de vouloir supprimer ${product.name} ?`)) {
@@ -283,7 +270,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
                             </button>
                           </div>
                         </td>
-
                       </tr>
                     );
                   })
