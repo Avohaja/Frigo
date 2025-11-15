@@ -1,0 +1,30 @@
+[
+  {
+    "id": "stock-14-1763230983517",
+    "productId": 14,
+    "productName": "Lait",
+    "icon": "package",
+    "title": "Stock faible - Lait",
+    "message": "Il ne reste que 1 L de Lait",
+    "date": "15/11/2025",
+    "read": true,
+    "type": "low-stock",
+    "priority": 1,
+    "createdAt": "2025-11-15T18:23:03.516Z",
+    "updatedAt": "2025-11-15T18:23:10.905Z"
+  },
+  {
+    "id": "stock-15-1763230983588",
+    "productId": 15,
+    "productName": "Oeufs",
+    "icon": "package",
+    "title": "Stock faible - Oeufs",
+    "message": "Il ne reste que 2 unité de Oeufs",
+    "date": "15/11/2025",
+    "read": true,
+    "type": "low-stock",
+    "priority": 1,
+    "createdAt": "2025-11-15T18:23:03.516Z",
+    "updatedAt": "2025-11-15T18:23:10.905Z"
+  }
+]

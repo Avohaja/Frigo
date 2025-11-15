@@ -409,3 +409,212 @@ app.delete('/api/recipes/:id', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+// Add these routes to your server.js file
+
+const fs = require('fs');
+const path = require('path');
+
+const NOTIFICATIONS_FILE = path.join(__dirname, 'notifications.json');
+
+// Helper function to read notifications from file
+const readNotificationsFromFile = () => {
+  try {
+    if (fs.existsSync(NOTIFICATIONS_FILE)) {
+      const data = fs.readFileSync(NOTIFICATIONS_FILE, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Error reading notifications file:', error);
+  }
+  return [];
+};
+
+// Helper function to write notifications to file
+const writeNotificationsToFile = (notifications) => {
+  try {
+    // Keep only the 30 most recent notifications
+    const recentNotifications = notifications
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 30);
+    
+    fs.writeFileSync(NOTIFICATIONS_FILE, JSON.stringify(recentNotifications, null, 2));
+    return recentNotifications;
+  } catch (error) {
+    console.error('Error writing notifications file:', error);
+    throw error;
+  }
+};
+
+// ==================== NOTIFICATIONS ROUTES ====================
+
+// GET all notifications
+app.get('/api/notifications', async (req, res) => {
+  try {
+    const notifications = readNotificationsFromFile();
+    res.json(notifications);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// CREATE or UPDATE notifications (this will be called by your frontend to generate notifications)
+app.post('/api/notifications/generate', async (req, res) => {
+  try {
+    const products = await pool.query('SELECT * FROM products');
+    
+    const existingNotifications = readNotificationsFromFile();
+    const now = new Date().toISOString();
+    
+    // Generate new notifications based on products
+    const newNotifications = products.rows
+      .map(product => {
+        const today = new Date();
+        const expirationDate = new Date(product.expiration);
+        const daysUntilExpiration = Math.ceil((expirationDate - today) / (1000 * 60 * 60 * 24));
+        
+        // Handle quantity as object or number
+        const quantityValue = typeof product.quantity === 'object' 
+          ? product.quantity.value 
+          : parseInt(product.quantity) || 0;
+        
+        const notifications = [];
+        
+        // Expired notification
+        if (daysUntilExpiration < 0) {
+          notifications.push({
+            id: `exp-${product.id}-${Date.now()}`,
+            productId: product.id,
+            productName: product.name,
+            icon: 'alert',
+            title: `${product.name} a expiré`,
+            message: `Le produit ${product.name} a expiré le ${expirationDate.toLocaleDateString('fr-FR')}`,
+            date: expirationDate.toLocaleDateString('fr-FR'),
+            read: false,
+            type: 'expired',
+            priority: 3,
+            createdAt: now,
+            updatedAt: now
+          });
+        } 
+        // Expiring soon notification
+        else if (daysUntilExpiration <= 3) {
+          notifications.push({
+            id: `expiring-${product.id}-${Date.now()}`,
+            productId: product.id,
+            productName: product.name,
+            icon: 'clock',
+            title: `${product.name} expire bientôt`,
+            message: `${product.name} expire dans ${daysUntilExpiration} jour${daysUntilExpiration > 1 ? 's' : ''}`,
+            date: expirationDate.toLocaleDateString('fr-FR'),
+            read: false,
+            type: 'expiring',
+            priority: 2,
+            createdAt: now,
+            updatedAt: now
+          });
+        }
+        
+        // Low stock notification
+        if (quantityValue <= 2) {
+          notifications.push({
+            id: `stock-${product.id}-${Date.now()}`,
+            productId: product.id,
+            productName: product.name,
+            icon: 'package',
+            title: `Stock faible - ${product.name}`,
+            message: `Il ne reste que ${quantityValue} ${typeof product.quantity === 'object' ? product.quantity.unit : 'unité(s)'} de ${product.name}`,
+            date: today.toLocaleDateString('fr-FR'),
+            read: false,
+            type: 'low-stock',
+            priority: 1,
+            createdAt: now,
+            updatedAt: now
+          });
+        }
+        
+        return notifications;
+      })
+      .flat()
+      .filter(Boolean);
+    
+    // Combine with existing notifications and keep only 30 most recent
+    const allNotifications = [...newNotifications, ...existingNotifications];
+    const updatedNotifications = writeNotificationsToFile(allNotifications);
+    
+    res.json(updatedNotifications);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// MARK notification as read
+app.patch('/api/notifications/:id/read', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { read } = req.body;
+    
+    const notifications = readNotificationsFromFile();
+    const notificationIndex = notifications.findIndex(n => n.id === id);
+    
+    if (notificationIndex === -1) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+    
+    notifications[notificationIndex].read = read;
+    notifications[notificationIndex].updatedAt = new Date().toISOString();
+    
+    const updatedNotifications = writeNotificationsToFile(notifications);
+    res.json(updatedNotifications.find(n => n.id === id));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// MARK all notifications as read
+app.patch('/api/notifications/read-all', async (req, res) => {
+  try {
+    const notifications = readNotificationsFromFile();
+    
+    const updatedNotifications = notifications.map(notification => ({
+      ...notification,
+      read: true,
+      updatedAt: new Date().toISOString()
+    }));
+    
+    writeNotificationsToFile(updatedNotifications);
+    res.json({ message: 'All notifications marked as read', count: updatedNotifications.length });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// DELETE notification
+app.delete('/api/notifications/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const notifications = readNotificationsFromFile();
+    const filteredNotifications = notifications.filter(n => n.id !== id);
+    
+    writeNotificationsToFile(filteredNotifications);
+    res.json({ message: 'Notification deleted' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// CLEAR all notifications
+app.delete('/api/notifications', async (req, res) => {
+  try {
+    writeNotificationsToFile([]);
+    res.json({ message: 'All notifications cleared' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
