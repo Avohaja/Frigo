@@ -2,28 +2,31 @@ import React, { useState } from 'react';
 import { Search, Edit2, Trash2, ChevronDown, Plus, Clock, Check, RefreshCw } from 'lucide-react';
 import { useRecipes } from '../../context/RecipeContext';
 import { useShoppingList } from '../../context/ShoppingContext';
-import { useProducts } from '../../context/ProductContext'; // NEW: Import products
+import { useProducts } from '../../context/ProductContext';
+import { useSnackbar } from 'notistack';
 
 function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
   const { recipes, deleteRecipe, syncRecipeWithInventory } = useRecipes();
   const { toggleRecipe, isRecipeSelected } = useShoppingList();
-  const { products } = useProducts(); // NEW: Get products from context
+  const { products } = useProducts();
+  const { enqueueSnackbar } = useSnackbar();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterDifficulty, setFilterDifficulty] = useState('all');
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [showDifficultyDropdown, setShowDifficultyDropdown] = useState(false);
-  const [syncingRecipe, setSyncingRecipe] = useState(null); // NEW: Track syncing state
+  const [syncingRecipe, setSyncingRecipe] = useState(null);
 
-  // NEW: Handle sync with inventory
+  // Handle sync with inventory
   const handleSyncWithInventory = async (recipeId) => {
     setSyncingRecipe(recipeId);
     try {
       const result = await syncRecipeWithInventory(recipeId, products);
-      
+
       if (result && result.changes) {
         const { addedToAvailable, movedToMissing } = result.changes;
-        
+
         let message = 'Synchronisation terminée.';
         if (addedToAvailable.length > 0) {
           message += ` ${addedToAvailable.length} ingrédient(s) ajouté(s) aux disponibles.`;
@@ -34,18 +37,16 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
         if (addedToAvailable.length === 0 && movedToMissing.length === 0) {
           message += ' Aucun changement nécessaire.';
         }
-        
-        alert(message);
+
+        enqueueSnackbar(message, { variant: 'success' });
       }
     } catch (error) {
-      alert('Erreur lors de la synchronisation avec l\'inventaire');
+      enqueueSnackbar(`Erreur lors de la synchronisation avec l'inventaire: ${error.message}`, { variant: 'error' });
       console.error('Sync error:', error);
     } finally {
       setSyncingRecipe(null);
     }
   };
-
-  // ... rest of your existing functions (getFilteredRecipes, getDifficultyColor, etc.)
 
   const types = ['all', ...new Set(recipes.map(r => r.type))];
   const difficulties = ['all', 'Facile', 'Moyen', 'Difficile'];
@@ -71,6 +72,44 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
   const handleToggleRecipe = (recipe, e) => {
     e.stopPropagation();
     toggleRecipe(recipe);
+    const action = isRecipeSelected(recipe.id) ? 'retiré de' : 'ajouté à';
+    enqueueSnackbar(`Recette "${recipe.title}" ${action} la liste de courses`, {
+      variant: isRecipeSelected(recipe.id) ? 'info' : 'success'
+    });
+  };
+
+  const handleDeleteRecipe = (recipe) => {
+    enqueueSnackbar(
+      <div>
+        <p className="font-medium">Êtes-vous sûr de vouloir supprimer "{recipe.title}" ?</p>
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={async () => {
+              try {
+                await deleteRecipe(recipe.id);
+                enqueueSnackbar(`Recette "${recipe.title}" supprimée avec succès`, { variant: 'success' });
+              } catch (error) {
+                enqueueSnackbar(`Erreur lors de la suppression: ${error.message}`, { variant: 'error' });
+              }
+            }}
+            className="px-3 py-1 bg-red-500 text-white rounded text-sm"
+          >
+            Oui
+          </button>
+          <button
+            onClick={() => enqueueSnackbar('Suppression annulée', { variant: 'info' })}
+            className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm"
+          >
+            Non
+          </button>
+        </div>
+      </div>,
+      {
+        variant: 'warning',
+        persist: true,
+        autoHideDuration: null
+      }
+    );
   };
 
   return (
@@ -81,7 +120,7 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
           <p className="text-gray-600">Découvrez et gérez vos recettes favorites. Cochez les recettes pour ajouter leurs ingrédients manquants à votre liste de courses.</p>
         </div>
         <div className="flex items-center justify-between mb-6 gap-4">
-          {/* Search and filters - keep existing code */}
+          {/* Search and filters */}
           <div className="flex-1 max-w-2xl relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <input
@@ -92,8 +131,8 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
               className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
           </div>
-
           <div className="flex gap-3">
+            {/* Type filter dropdown */}
             <div className="relative">
               <button
                 onClick={() => {
@@ -107,7 +146,6 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
                 </span>
                 <ChevronDown size={18} className="text-gray-500" />
               </button>
-
               {showTypeDropdown && (
                 <div className="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-10 min-w-[200px]">
                   {types.map((type) => (
@@ -127,6 +165,7 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
                 </div>
               )}
             </div>
+            {/* Difficulty filter dropdown */}
             <div className="relative">
               <button
                 onClick={() => {
@@ -140,7 +179,6 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
                 </span>
                 <ChevronDown size={18} className="text-gray-500" />
               </button>
-
               {showDifficultyDropdown && (
                 <div className="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-10 min-w-[200px]">
                   {difficulties.map((difficulty) => (
@@ -161,7 +199,6 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
               )}
             </div>
           </div>
-
           <button
             onClick={onAddRecipe}
             className="flex items-center gap-2 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
@@ -221,7 +258,6 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
                       </span>
                     </div>
                     <p className="text-sm text-gray-600 mb-4">{recipe.type}</p>
-
                     {/* Show missing ingredients if any */}
                     {recipe.missingIngredients && recipe.missingIngredients.length > 0 && (
                       <div className="mb-4 p-3 bg-orange-50 rounded-lg border border-orange-100">
@@ -229,14 +265,13 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
                         <div className="flex flex-wrap gap-1">
                           {recipe.missingIngredients.map((ingredient, idx) => (
                             <span key={idx} className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full">
-                              {ingredient.name} 
+                              {ingredient.name}
                               {ingredient.quantity && ` (${ingredient.quantity.value} ${ingredient.quantity.unit})`}
                             </span>
                           ))}
                         </div>
                       </div>
                     )}
-
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => onViewRecipe(recipe.id)}
@@ -244,20 +279,20 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
                       >
                         Voir détails
                       </button>
-                      
-                      {/* NEW: Sync with Inventory Button */}
+
+                      {/* Sync with Inventory Button */}
                       <button
                         onClick={() => handleSyncWithInventory(recipe.id)}
                         disabled={syncingRecipe === recipe.id}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg disabled:opacity-50"
                         title="Synchroniser avec l'inventaire"
                       >
-                        <RefreshCw 
-                          size={18} 
-                          className={syncingRecipe === recipe.id ? 'animate-spin' : ''} 
+                        <RefreshCw
+                          size={18}
+                          className={syncingRecipe === recipe.id ? 'animate-spin' : ''}
                         />
                       </button>
-                      
+
                       <button
                         onClick={() => onEditRecipe(recipe.id)}
                         className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
@@ -265,11 +300,7 @@ function RecipeList({ onAddRecipe, onEditRecipe, onViewRecipe }) {
                         <Edit2 size={18} />
                       </button>
                       <button
-                        onClick={() => {
-                          if (window.confirm(`Êtes-vous sûr de vouloir supprimer "${recipe.title}" ?`)) {
-                            deleteRecipe(recipe.id);
-                          }
-                        }}
+                        onClick={() => handleDeleteRecipe(recipe)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
                       >
                         <Trash2 size={18} />

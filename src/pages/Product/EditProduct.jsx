@@ -51,7 +51,6 @@ export default function EditProduct({ productId, onBack }) {
         },
         expiration: form.expiration
       });
-      alert(`Produit modifié : ${form.name}`);
       onBack();
     } else {
       alert("Veuillez remplir tous les champs");

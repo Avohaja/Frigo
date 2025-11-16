@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Search, Edit2, Trash2, ChevronDown, Plus, Minus } from 'lucide-react';
 import { useProducts } from '../../context/ProductContext';
+import { useSnackbar } from 'notistack';
 
 export default function Inventory({ onAddProduct, onEditProduct }) {
   const { products, deleteProduct, updateQuantity } = useProducts();
+  const { enqueueSnackbar } = useSnackbar();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [sortBy, setSortBy] = useState('name');
@@ -34,13 +36,43 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
     };
 
     if (newQuantity.value === 0) {
-      if (window.confirm(`La quantité sera à 0. Voulez-vous supprimer ${product.name} ?`)) {
-        await deleteProduct(product.id);
-      }
+      enqueueSnackbar(
+        <div>
+          <p>La quantité sera à 0.</p>
+          <p>Voulez-vous supprimer {product.name} ?</p>
+          <div className="mt-2 flex gap-2">
+            <button
+              onClick={async () => {
+                await deleteProduct(product.id);
+                enqueueSnackbar(`Produit "${product.name}" supprimé avec succès`, { variant: 'success' });
+              }}
+              className="px-3 py-1 bg-red-500 text-white rounded text-sm"
+            >
+              Oui
+            </button>
+            <button
+              onClick={() => enqueueSnackbar('Annulé', { variant: 'info' })}
+              className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm"
+            >
+              Non
+            </button>
+          </div>
+        </div>,
+        {
+          variant: 'warning',
+          persist: true,
+          autoHideDuration: null
+        }
+      );
       return;
     }
 
-    await updateQuantity(product.id, newQuantity);
+    try {
+      await updateQuantity(product.id, newQuantity);
+      enqueueSnackbar(`Quantité mise à jour: ${newQuantity.value} ${newQuantity.unit}`, { variant: 'success' });
+    } catch (error) {
+      enqueueSnackbar(`Erreur lors de la mise à jour de la quantité: ${error.message}`, { variant: 'error' });
+    }
   };
 
   const getFilteredAndSortedProducts = () => {
@@ -63,7 +95,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
         default: return 0;
       }
     });
-
     return sorted;
   };
 
@@ -88,7 +119,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Inventaire</h2>
           <p className="text-gray-600 text-sm sm:text-base">Gérez vos produits et réduisez le gaspillage.</p>
         </div>
-
         {/* Search & Filters */}
         <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-3">
           <div className="w-full sm:flex-1 sm:max-w-md relative">
@@ -101,7 +131,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm"
             />
           </div>
-
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <div className="flex gap-2">
               {/* CATEGORY FILTER */}
@@ -137,7 +166,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
                   </div>
                 )}
               </div>
-
               {/* SORT */}
               <div className="relative w-full sm:w-auto">
                 <button
@@ -179,7 +207,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
                 )}
               </div>
             </div>
-
             <button
               onClick={onAddProduct}
               className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium text-sm"
@@ -189,7 +216,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
             </button>
           </div>
         </div>
-
         {/* TABLE */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
@@ -260,9 +286,37 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
                             </button>
                             <button
                               onClick={() => {
-                                if (window.confirm(`Êtes-vous sûr de vouloir supprimer ${product.name} ?`)) {
-                                  deleteProduct(product.id);
-                                }
+                                enqueueSnackbar(
+                                  <div>
+                                    <p>Êtes-vous sûr de vouloir supprimer {product.name} ?</p>
+                                    <div className="mt-2 flex gap-2">
+                                      <button
+                                        onClick={async () => {
+                                          try {
+                                            await deleteProduct(product.id);
+                                            enqueueSnackbar(`Produit "${product.name}" supprimé avec succès`, { variant: 'success' });
+                                          } catch (error) {
+                                            enqueueSnackbar(`Erreur lors de la suppression: ${error.message}`, { variant: 'error' });
+                                          }
+                                        }}
+                                        className="px-3 py-1 bg-red-500 text-white rounded text-sm"
+                                      >
+                                        Oui
+                                      </button>
+                                      <button
+                                        onClick={() => enqueueSnackbar('Suppression annulée', { variant: 'info' })}
+                                        className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm"
+                                      >
+                                        Non
+                                      </button>
+                                    </div>
+                                  </div>,
+                                  {
+                                    variant: 'warning',
+                                    persist: true,
+                                    autoHideDuration: null
+                                  }
+                                );
                               }}
                               className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"
                             >
@@ -278,7 +332,6 @@ export default function Inventory({ onAddProduct, onEditProduct }) {
             </table>
           </div>
         </div>
-
         <div className="mt-3 text-xs sm:text-sm text-gray-600">
           {filteredProducts.length} produit(s) affiché(s) sur {products.length} total
         </div>

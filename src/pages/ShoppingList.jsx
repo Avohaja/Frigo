@@ -3,7 +3,6 @@ import { ChevronLeft, ChevronRight, Plus, X, ShoppingCart, AlertTriangle, Clock,
 import { useProducts } from "../context/ProductContext";
 import { useShoppingList } from "../context/ShoppingContext";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 
 export default function ShoppingList() {
   const { products } = useProducts();
@@ -19,57 +18,31 @@ export default function ShoppingList() {
 
   // Unit options
   const unitOptions = [
-    "unité", "kg", "g", "L", "mL", 
+    "unité", "kg", "g", "L", "mL",
     "cuillère à soupe", "cuillère à café", "pincée",
     "tasse", "verre", "sachet", "boîte", "bouteille"
   ];
 
-  // Filtrer les produits périmés ou bientôt périmés
-  const expiredProducts = useMemo(() => {
-    return products.filter(p => p.status === 'expired' || p.status === 'expiring' || p.status === 'low')
-      .map(p => ({
-        id: p.id,
-        name: p.name,
-        quantity: p.quantity,
-        category: p.category,
-        status: p.status,
-        type: 'expired',
-        image: p.image || `https://via.placeholder.com/300?text=${encodeURIComponent(p.name)}`
-      }));
-  }, [products]);
-
-  // Filtrer les produits à stock faible
-  const lowStockProducts = useMemo(() => {
-    return products.filter(p => p.status === 'low')
-      .map(p => ({
-        id: p.id,
-        name: p.name,
-        quantity: p.quantity,
-        category: p.category,
-        status: p.status,
-        type: 'lowStock',
-        image: p.image || `https://via.placeholder.com/300?text=${encodeURIComponent(p.name)}`
-      }));
-  }, [products]);
-
+  // Add to list
   const addToList = (item) => {
     if (!shoppingList.find((i) => i.id === item.id)) {
-      setShoppingList([...shoppingList, { 
-        ...item, 
+      setShoppingList([...shoppingList, {
+        ...item,
         added: true,
         quantity: typeof item.quantity === 'object' ? item.quantity : { value: item.quantity, unit: 'unité' }
       }]);
     }
   };
 
+  // Add manual item
   const addManualItem = () => {
     if (manualItem.trim()) {
       const newItem = {
         id: Date.now(),
         name: manualItem,
-        quantity: { 
-          value: manualQuantity || "1", 
-          unit: manualUnit 
+        quantity: {
+          value: manualQuantity || "1",
+          unit: manualUnit
         },
         manual: true,
       };
@@ -80,17 +53,19 @@ export default function ShoppingList() {
     }
   };
 
+  // Remove from list
   const removeFromList = (id) => {
     setShoppingList(shoppingList.filter((item) => item.id !== id));
   };
 
+  // Update quantity
   const updateQuantity = (itemId, change) => {
-    setShoppingList(prevList => 
+    setShoppingList(prevList =>
       prevList.map(item => {
         if (item.id === itemId) {
           const currentValue = parseInt(item.quantity.value) || 0;
           const newValue = Math.max(0, currentValue + change);
-          
+
           return {
             ...item,
             quantity: {
@@ -104,36 +79,40 @@ export default function ShoppingList() {
     );
   };
 
+  // Update unit
   const updateUnit = (itemId, newUnit) => {
-    setShoppingList(prevList => 
-      prevList.map(item => 
-        item.id === itemId 
-          ? { 
-              ...item, 
-              quantity: { 
-                ...item.quantity, 
-                unit: newUnit 
-              } 
-            } 
+    setShoppingList(prevList =>
+      prevList.map(item =>
+        item.id === itemId
+          ? {
+              ...item,
+              quantity: {
+                ...item.quantity,
+                unit: newUnit
+              }
+            }
           : item
       )
     );
     setEditingItem(null);
   };
 
+  // Start editing unit
   const startEditing = (itemId) => {
     setEditingItem(itemId);
   };
 
+  // Scroll left
   const scrollLeft = (section) => {
     setScrollPosition((prev) => ({ ...prev, [section]: Math.max(0, prev[section] - 340) }));
   };
 
+  // Scroll right
   const scrollRight = (section) => {
     setScrollPosition((prev) => ({ ...prev, [section]: prev[section] + 340 }));
   };
 
-  // Helper function to format quantity display
+  // Format quantity
   const formatQuantity = (quantity) => {
     if (typeof quantity === 'object' && quantity !== null) {
       return `${quantity.value} ${quantity.unit}`;
@@ -141,42 +120,60 @@ export default function ShoppingList() {
     return quantity;
   };
 
-  // Export to PDF function
-  const exportToPDF = async () => {
-    if (!shoppingListRef.current) return;
-
+  // Export to PDF (Professional Receipt)
+  const exportToPDF = () => {
     try {
-      const canvas = await html2canvas(shoppingListRef.current, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-      });
-
-      const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      
-      // Calculate dimensions to fit the content
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-      const imgX = (pdfWidth - imgWidth * ratio) / 2;
-      const imgY = 10;
+      const margin = 15;
+      const lineHeight = 7;
+      const startY = 30;
 
-      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
-      
-      // Add header
+      // Title
       pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(0, 0, 0);
       pdf.text('MA LISTE DE COURSES', pdfWidth / 2, 20, { align: 'center' });
-      
-      // Add date
-      pdf.setFontSize(12);
-      pdf.setTextColor(100, 100, 100);
-      pdf.text(`Générée le ${new Date().toLocaleDateString('fr-FR')}`, pdfWidth / 2, 30, { align: 'center' });
 
+      // Date
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(100, 100, 100);
+      pdf.text(`Générée le ${new Date().toLocaleDateString('fr-FR')}`, pdfWidth / 2, 28, { align: 'center' });
+
+      // Receipt header
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('--- DÉTAILS ---', margin, startY);
+
+      // Receipt items
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      let yPos = startY + lineHeight;
+
+      shoppingList.forEach((item, index) => {
+        if (yPos > 260) {
+          pdf.addPage();
+          yPos = 20;
+        }
+
+        const itemText = `${index + 1}. ${item.name}`;
+        const quantityText = `${item.quantity.value} ${item.quantity.unit}`;
+
+        pdf.text(itemText, margin, yPos);
+        pdf.text(quantityText, pdfWidth - margin - 20, yPos, { align: 'right' });
+
+        yPos += lineHeight;
+      });
+
+      // Footer
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'italic');
+      pdf.setTextColor(150, 150, 150);
+      pdf.text('Merci pour vos achats !', pdfWidth / 2, 280, { align: 'center' });
+
+      // Save the PDF
       pdf.save('ma-liste-de-courses.pdf');
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -184,11 +181,11 @@ export default function ShoppingList() {
     }
   };
 
-  // Export as text file (alternative)
+  // Export as text
   const exportAsText = () => {
     const content = `MA LISTE DE COURSES\nGénérée le ${new Date().toLocaleDateString('fr-FR')}\n\n` +
-      shoppingList.map(item => `• ${item.name}: ${formatQuantity(item.quantity)}`).join('\n');
-    
+      shoppingList.map((item, index) => `${index + 1}. ${item.name}: ${formatQuantity(item.quantity)}`).join('\n');
+
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -196,10 +193,38 @@ export default function ShoppingList() {
     link.click();
   };
 
+  // Filter expired or expiring products
+  const expiredProducts = useMemo(() => {
+    return products.filter(p => p.status === 'expired' || p.status === 'expiring' || p.status === 'low')
+      .map(p => ({
+        id: p.id,
+        name: p.name,
+        quantity: p.quantity,
+        category: p.category,
+        status: p.status,
+        type: 'expired',
+        image: p.image || `https://via.placeholder.com/300?text=${encodeURIComponent(p.name)}`
+      }));
+  }, [products]);
+
+  // Filter low stock products
+  const lowStockProducts = useMemo(() => {
+    return products.filter(p => p.status === 'low')
+      .map(p => ({
+        id: p.id,
+        name: p.name,
+        quantity: p.quantity,
+        category: p.category,
+        status: p.status,
+        type: 'lowStock',
+        image: p.image || `https://via.placeholder.com/300?text=${encodeURIComponent(p.name)}`
+      }));
+  }, [products]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 py-8">
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* En-tête */}
+        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
@@ -212,11 +237,11 @@ export default function ShoppingList() {
           </div>
         </div>
 
-        {/* Ingrédients manquants */}
+        {/* Main content grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left column: Add items and product lists */}
           <div className="lg:col-span-2 space-y-6">
-
-            {/* Ajout manuel */}
+            {/* Add manual item */}
             <div className="bg-white rounded-3xl shadow-lg p-6">
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Ajouter un article personnalisé</h3>
               <div className="space-y-3">
@@ -266,7 +291,7 @@ export default function ShoppingList() {
               </div>
             </div>
 
-            {/* Ingrédients manquants des recettes */}
+            {/* Missing ingredients */}
             {missingIngredients.length > 0 && (
               <div className="bg-white rounded-3xl shadow-lg p-6">
                 <div className="flex items-center justify-between mb-6">
@@ -328,7 +353,7 @@ export default function ShoppingList() {
               </div>
             )}
 
-            {/* Produits périmés */}
+            {/* Expired products */}
             {expiredProducts.length > 0 && (
               <div className="bg-white rounded-3xl shadow-lg p-6">
                 <div className="flex items-center justify-between mb-6">
@@ -401,7 +426,7 @@ export default function ShoppingList() {
               </div>
             )}
 
-            {/* Produits à stock faible */}
+            {/* Low stock products */}
             {lowStockProducts.length > 0 && (
               <div className="bg-white rounded-3xl shadow-lg p-6">
                 <div className="flex items-center justify-between mb-6">
@@ -472,9 +497,9 @@ export default function ShoppingList() {
             )}
           </div>
 
-          {/* Ma liste */}
+          {/* Right column: Shopping list */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-3xl shadow-lg p-6 sticky top-24" ref={shoppingListRef}>
+            <div className="bg-white rounded-3xl shadow-lg p-6 sticky top-24">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-2xl font-bold text-gray-900">
                   Ma liste
@@ -486,13 +511,6 @@ export default function ShoppingList() {
                   {shoppingList.length > 0 && (
                     <>
                       <button
-                        onClick={exportToPDF}
-                        className="flex items-center gap-1 text-sm text-green-600 hover:text-green-800 font-medium"
-                        title="Exporter en PDF"
-                      >
-                        <Download size={16} />
-                      </button>
-                      <button
                         onClick={() => setShoppingList([])}
                         className="flex items-center gap-1 text-sm text-red-600 hover:text-red-800 font-medium"
                       >
@@ -503,6 +521,8 @@ export default function ShoppingList() {
                   )}
                 </div>
               </div>
+
+              {/* Shopping list content */}
               {shoppingList.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -533,7 +553,7 @@ export default function ShoppingList() {
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-gray-900 truncate">{item.name}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <button 
+                          <button
                             onClick={() => updateQuantity(item.id, -1)}
                             className="w-5 h-5 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded text-xs font-bold transition-colors"
                           >
@@ -542,13 +562,13 @@ export default function ShoppingList() {
                           <span className="text-sm text-gray-700 font-medium min-w-[60px] text-center">
                             {item.quantity.value}
                           </span>
-                          <button 
+                          <button
                             onClick={() => updateQuantity(item.id, 1)}
                             className="w-5 h-5 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded text-xs font-bold transition-colors"
                           >
                             +
                           </button>
-                          
+
                           {editingItem === item.id ? (
                             <select
                               value={item.quantity.unit}
@@ -582,18 +602,20 @@ export default function ShoppingList() {
                   ))}
                 </div>
               )}
+
+              {/* Export buttons */}
               {shoppingList.length > 0 && (
-                <div className="mt-6 pt-6 border-t border-gray-200 space-y-2">
-                  <button 
+                <div className="mt-6 pt-4 border-t border-gray-200 flex gap-2">
+                  <button
                     onClick={exportToPDF}
-                    className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold rounded-2xl transition-all shadow-md"
+                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium rounded-xl transition-all"
                   >
-                    <Download size={18} />
+                    <Download size={16} />
                     Exporter en PDF
                   </button>
-                  <button 
+                  <button
                     onClick={exportAsText}
-                    className="w-full py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-xl transition-all"
+                    className="flex-1 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-xl transition-all"
                   >
                     Exporter en texte
                   </button>

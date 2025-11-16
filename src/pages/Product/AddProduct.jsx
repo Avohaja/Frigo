@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useProducts } from "../../context/ProductContext";
+import { useSnackbar } from 'notistack';
 
 export default function AddProduct({ onBack }) {
   const { addProduct } = useProducts();
+  const { enqueueSnackbar } = useSnackbar();
+
   const [form, setForm] = useState({
     name: "",
     category: "",
@@ -17,24 +20,35 @@ export default function AddProduct({ onBack }) {
     setForm({ ...form, [name]: value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (form.name && form.category && form.quantityValue && form.quantityUnit && form.expiration) {
-      addProduct({
+
+    if (!form.name || !form.category || !form.quantityValue || !form.quantityUnit || !form.expiration) {
+      enqueueSnackbar("Veuillez remplir tous les champs", { variant: 'error' });
+      return;
+    }
+
+    try {
+      await addProduct({
         name: form.name,
         category: form.category,
-        quantity: { 
-          value: parseInt(form.quantityValue), 
-          unit: form.quantityUnit 
+        quantity: {
+          value: parseInt(form.quantityValue),
+          unit: form.quantityUnit
         },
         expiration: form.expiration
       });
+
+      enqueueSnackbar(`Produit "${form.name}" ajouté avec succès!`, { variant: 'success' });
       setForm({ name: "", category: "", quantityValue: "", quantityUnit: "", expiration: "" });
-      alert(`Produit ajouté : ${form.name}`);
       onBack();
-    } else {
-      alert("Veuillez remplir tous les champs");
+    } catch (error) {
+      enqueueSnackbar(`Erreur lors de l'ajout du produit: ${error.message}`, { variant: 'error' });
     }
+  };
+
+  const handleBarcodeScan = () => {
+    enqueueSnackbar("Simulation de scan du code-barres 📸", { variant: 'info' });
   };
 
   return (
@@ -133,7 +147,7 @@ export default function AddProduct({ onBack }) {
             </button>
             <button
               type="button"
-              onClick={() => alert("Simulation de scan du code-barres 📸")}
+              onClick={handleBarcodeScan}
               className="flex-1 bg-green-100 hover:bg-green-200 text-green-700 font-semibold py-3 rounded-xl"
             >
               Simuler le scan d'un code-barres

@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, X, Check } from 'lucide-react';
 import { useRecipes } from '../../context/RecipeContext';
 import { useProducts } from '../../context/ProductContext';
+import { useSnackbar } from 'notistack';
 
 function RecipeForm({ recipeId, onBack }) {
   const { getRecipe, addRecipe, updateRecipe } = useRecipes();
   const { products } = useProducts();
-  
+  const { enqueueSnackbar } = useSnackbar();
+
   const [form, setForm] = useState({
     title: "",
     type: "",
@@ -18,7 +20,6 @@ function RecipeForm({ recipeId, onBack }) {
     steps: [],
     isUsed: false
   });
-
   const [currentMissingIngredient, setCurrentMissingIngredient] = useState({ name: "", quantity: { value: "", unit: "unité" } });
   const [currentStep, setCurrentStep] = useState("");
   const [showProductSelector, setShowProductSelector] = useState(false);
@@ -31,10 +32,10 @@ function RecipeForm({ recipeId, onBack }) {
         setForm({
           ...recipe,
           // Ensure ingredients have proper structure
-          availableIngredients: recipe.availableIngredients?.map(ing => 
+          availableIngredients: recipe.availableIngredients?.map(ing =>
             typeof ing === 'string' ? { name: ing, quantity: { value: 1, unit: "unité" } } : ing
           ) || [],
-          missingIngredients: recipe.missingIngredients?.map(ing => 
+          missingIngredients: recipe.missingIngredients?.map(ing =>
             typeof ing === 'string' ? { name: ing, quantity: { value: 1, unit: "unité" } } : ing
           ) || []
         });
@@ -47,15 +48,15 @@ function RecipeForm({ recipeId, onBack }) {
     setForm({ ...form, [name]: value });
   };
 
-  // Filtrer les produits en fonction de la recherche
+  // Filter products based on search
   const getFilteredProducts = () => {
-    return products.filter(product => 
+    return products.filter(product =>
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
       !form.availableIngredients.some(ing => ing.name === product.name)
     );
   };
 
-  // Ajouter un produit disponible depuis l'inventaire
+  // Add a product ingredient from inventory
   const addProductIngredient = (product) => {
     if (!form.availableIngredients.some(ing => ing.name === product.name)) {
       const newIngredient = {
@@ -66,6 +67,7 @@ function RecipeForm({ recipeId, onBack }) {
         ...form,
         availableIngredients: [...form.availableIngredients, newIngredient]
       });
+      enqueueSnackbar(`Ingrédient "${product.name}" ajouté`, { variant: 'success' });
     }
     setSearchTerm("");
     setShowProductSelector(false);
@@ -73,15 +75,19 @@ function RecipeForm({ recipeId, onBack }) {
 
   const removeIngredient = (index, type) => {
     if (type === 'available') {
+      const ingredientName = form.availableIngredients[index].name;
       setForm({
         ...form,
         availableIngredients: form.availableIngredients.filter((_, i) => i !== index)
       });
+      enqueueSnackbar(`Ingrédient "${ingredientName}" retiré`, { variant: 'info' });
     } else {
+      const ingredientName = form.missingIngredients[index].name;
       setForm({
         ...form,
         missingIngredients: form.missingIngredients.filter((_, i) => i !== index)
       });
+      enqueueSnackbar(`Ingrédient manquant "${ingredientName}" retiré`, { variant: 'info' });
     }
   };
 
@@ -115,7 +121,10 @@ function RecipeForm({ recipeId, onBack }) {
         ...form,
         missingIngredients: [...form.missingIngredients, newIngredient]
       });
+      enqueueSnackbar(`Ingrédient manquant "${newIngredient.name}" ajouté`, { variant: 'success' });
       setCurrentMissingIngredient({ name: "", quantity: { value: "", unit: "unité" } });
+    } else {
+      enqueueSnackbar("Veuillez entrer un nom pour l'ingrédient manquant", { variant: 'error' });
     }
   };
 
@@ -124,6 +133,7 @@ function RecipeForm({ recipeId, onBack }) {
       ...form,
       steps: form.steps.filter((_, i) => i !== index)
     });
+    enqueueSnackbar(`Étape ${index + 1} supprimée`, { variant: 'info' });
   };
 
   const addStep = () => {
@@ -132,45 +142,49 @@ function RecipeForm({ recipeId, onBack }) {
         ...form,
         steps: [...form.steps, currentStep.trim()]
       });
+      enqueueSnackbar("Étape ajoutée", { variant: 'success' });
       setCurrentStep("");
+    } else {
+      enqueueSnackbar("Veuillez entrer une étape", { variant: 'error' });
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (form.title && form.type && form.time && form.difficulty) {
-      try {
-        if (recipeId) {
-          await updateRecipe(recipeId, form);
-          alert(`Recette modifiée : ${form.title}`);
-        } else {
-          await addRecipe(form);
-          alert(`Recette ajoutée : ${form.title}`);
-        }
-        onBack();
-      } catch (error) {
-        alert("Erreur lors de la sauvegarde de la recette");
+
+    if (!form.title || !form.type || !form.time || !form.difficulty) {
+      enqueueSnackbar("Veuillez remplir tous les champs obligatoires", { variant: 'error' });
+      return;
+    }
+
+    try {
+      if (recipeId) {
+        await updateRecipe(recipeId, form);
+        enqueueSnackbar(`Recette "${form.title}" modifiée avec succès!`, { variant: 'success' });
+      } else {
+        await addRecipe(form);
+        enqueueSnackbar(`Recette "${form.title}" ajoutée avec succès!`, { variant: 'success' });
       }
-    } else {
-      alert("Veuillez remplir tous les champs obligatoires");
+      onBack();
+    } catch (error) {
+      enqueueSnackbar(`Erreur lors de la sauvegarde de la recette: ${error.message}`, { variant: 'error' });
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
-      <button 
+      <button
         onClick={onBack}
         className="flex items-center gap-2 text-green-600 hover:text-green-700 font-medium mb-6"
       >
         <ArrowLeft size={20} />
         Retour aux recettes
       </button>
-
       <div className="bg-white shadow-md rounded-2xl p-8">
         <h2 className="text-3xl font-bold mb-6 text-gray-800">
           {recipeId ? 'Modifier la recette' : 'Ajouter une recette'}
         </h2>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -185,7 +199,6 @@ function RecipeForm({ recipeId, onBack }) {
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
               />
             </div>
-
             <div>
               <label className="block text-gray-700 mb-2 font-medium">Type de plat *</label>
               <select
@@ -202,7 +215,6 @@ function RecipeForm({ recipeId, onBack }) {
                 <option value="Accompagnement">Accompagnement</option>
               </select>
             </div>
-
             <div>
               <label className="block text-gray-700 mb-2 font-medium">Temps de préparation *</label>
               <input
@@ -215,7 +227,6 @@ function RecipeForm({ recipeId, onBack }) {
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
               />
             </div>
-
             <div>
               <label className="block text-gray-700 mb-2 font-medium">Difficulté *</label>
               <select
@@ -232,7 +243,6 @@ function RecipeForm({ recipeId, onBack }) {
               </select>
             </div>
           </div>
-
           <div>
             <label className="block text-gray-700 mb-2 font-medium">URL de l'image</label>
             <input
@@ -244,7 +254,6 @@ function RecipeForm({ recipeId, onBack }) {
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
             />
           </div>
-
           {/* Sélection des ingrédients depuis l'inventaire */}
           <div>
             <label className="block text-gray-700 mb-2 font-medium">Ingrédients disponibles depuis l'inventaire</label>
@@ -261,7 +270,7 @@ function RecipeForm({ recipeId, onBack }) {
                   onFocus={() => setShowProductSelector(true)}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400 focus:outline-none"
                 />
-                
+
                 {showProductSelector && getFilteredProducts().length > 0 && (
                   <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {getFilteredProducts().map((product) => (
@@ -284,7 +293,7 @@ function RecipeForm({ recipeId, onBack }) {
                 )}
               </div>
             </div>
-            
+
             <div className="space-y-2">
               {form.availableIngredients.map((ingredient, index) => (
                 <div key={index} className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
@@ -305,14 +314,13 @@ function RecipeForm({ recipeId, onBack }) {
                 </div>
               ))}
             </div>
-            
+
             {form.availableIngredients.length === 0 && (
               <p className="text-sm text-gray-500 italic mt-2">
                 Aucun ingrédient sélectionné. Recherchez un produit dans votre inventaire.
               </p>
             )}
           </div>
-
           {/* Ingrédients manquants */}
           <div>
             <label className="block text-gray-700 mb-2 font-medium">Ingrédients manquants (optionnel)</label>
@@ -382,7 +390,6 @@ function RecipeForm({ recipeId, onBack }) {
               ))}
             </div>
           </div>
-
           {/* Étapes */}
           <div>
             <label className="block text-gray-700 mb-2 font-medium">Étapes de préparation</label>
@@ -420,7 +427,6 @@ function RecipeForm({ recipeId, onBack }) {
               ))}
             </div>
           </div>
-
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <button
               type="submit"

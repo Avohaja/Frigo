@@ -1,4 +1,5 @@
 import { createContext, useState, useContext, useEffect } from 'react';
+import { useSnackbar } from 'notistack';
 
 const ProductContext = createContext();
 const API_URL = 'http://localhost:5000/api';
@@ -12,19 +13,18 @@ export const useProducts = () => {
 };
 
 export const ProductProvider = ({ children }) => {
+  const { enqueueSnackbar } = useSnackbar();
   const [products, setProducts] = useState([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Calcule le statut en fonction de la date de péremption et de la quantité
+  // Calculate status based on expiration date and quantity
   const calculateStatus = (expiration, quantity) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     const expirationDate = new Date(expiration);
     expirationDate.setHours(0, 0, 0, 0);
-
     const daysUntilExpiration = Math.ceil((expirationDate - today) / (1000 * 60 * 60 * 24));
 
     // Handle both quantity formats
@@ -41,28 +41,23 @@ export const ProductProvider = ({ children }) => {
     return 'fresh';
   };
 
-  // Récupère les produits depuis l'API
+  // Fetch products from API
   const fetchProducts = async () => {
     try {
       setLoading(true);
       setError(null);
       console.log('Fetching products from:', `${API_URL}/products`);
-      
+
       const response = await fetch(`${API_URL}/products`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       console.log('Raw products data from API:', data);
-      
-      // Check what format quantity is in
-      data.forEach(product => {
-        console.log(`Product ${product.id} quantity:`, product.quantity, typeof product.quantity);
-      });
-      
-      // Met à jour le statut pour chaque produit
+
+      // Update status for each product
       const productsWithUpdatedStatus = data.map(product => ({
         ...product,
         status: calculateStatus(product.expiration, product.quantity)
@@ -70,10 +65,11 @@ export const ProductProvider = ({ children }) => {
 
       setProducts(productsWithUpdatedStatus);
       setIsInitialized(true);
+      enqueueSnackbar('Products loaded successfully!', { variant: 'success' });
     } catch (error) {
       console.error('Error fetching products:', error);
       setError(error.message);
-      // No mock data - just set empty array and show error
+      enqueueSnackbar('Failed to load products.', { variant: 'error' });
       setProducts([]);
       setIsInitialized(true);
     } finally {
@@ -81,110 +77,116 @@ export const ProductProvider = ({ children }) => {
     }
   };
 
-  // Charge les produits au démarrage
+  // Load products on startup
   useEffect(() => {
     fetchProducts();
   }, []);
 
-  // Ajoute un nouveau produit
+  // Add a new product
   const addProduct = async (product) => {
     try {
       const productWithStatus = {
         ...product,
-        quantity: product.quantity, // Keep as object {value, unit}
+        quantity: product.quantity,
         status: calculateStatus(product.expiration, product.quantity)
       };
-      
+
       const response = await fetch(`${API_URL}/products`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(productWithStatus)
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const newProduct = await response.json();
       setProducts([...products, newProduct]);
+      enqueueSnackbar('Product added successfully!', { variant: 'success' });
       return newProduct;
     } catch (error) {
       console.error('Error adding product:', error);
-      throw error; // Re-throw to handle in component
+      enqueueSnackbar('Failed to add product.', { variant: 'error' });
+      throw error;
     }
   };
 
-  // Met à jour un produit existant
+  // Update an existing product
   const updateProduct = async (id, updatedProduct) => {
     try {
       const productWithStatus = {
         ...updatedProduct,
-        quantity: updatedProduct.quantity, // Keep as object
+        quantity: updatedProduct.quantity,
         status: calculateStatus(updatedProduct.expiration, updatedProduct.quantity)
       };
-      
+
       const response = await fetch(`${API_URL}/products/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(productWithStatus)
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const updated = await response.json();
       setProducts(products.map(p => (p.id === id ? updated : p)));
+      enqueueSnackbar('Product updated successfully!', { variant: 'success' });
       return updated;
     } catch (error) {
       console.error('Error updating product:', error);
+      enqueueSnackbar('Failed to update product.', { variant: 'error' });
       throw error;
     }
   };
 
-  // Met à jour uniquement la quantité d'un produit
+  // Update only the quantity of a product
   const updateQuantity = async (id, newQuantity) => {
     try {
       const response = await fetch(`${API_URL}/products/${id}/quantity`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          quantity: newQuantity
-        })
+        body: JSON.stringify({ quantity: newQuantity })
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const updated = await response.json();
       setProducts(products.map(p => (p.id === id ? updated : p)));
+      enqueueSnackbar('Quantity updated successfully!', { variant: 'success' });
       return updated;
     } catch (error) {
-      console.error('Erreur lors de la mise à jour de la quantité:', error);
+      console.error('Error updating quantity:', error);
+      enqueueSnackbar('Failed to update quantity.', { variant: 'error' });
       throw error;
     }
   };
 
-  // Supprime un produit
+  // Delete a product
   const deleteProduct = async (id) => {
     try {
-      const response = await fetch(`${API_URL}/products/${id}`, { 
-        method: 'DELETE' 
+      const response = await fetch(`${API_URL}/products/${id}`, {
+        method: 'DELETE'
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       setProducts(products.filter(p => p.id !== id));
+      enqueueSnackbar('Product deleted successfully!', { variant: 'success' });
     } catch (error) {
       console.error('Error deleting product:', error);
+      enqueueSnackbar('Failed to delete product.', { variant: 'error' });
       throw error;
     }
   };
 
-  // Récupère un produit par son ID
+  // Get a product by ID
   const getProduct = (id) => {
     return products.find(p => p.id === id);
   };
