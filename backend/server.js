@@ -5,10 +5,16 @@ const { Pool } = require('pg');
 require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
+const { exec } = require('child_process');
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+//AI and jsonfile imports
+const { Mistral } = require('@mistralai/mistralai');
+const fs = require("fs");
+const path = require("path");
 
 // PostgreSQL connection
 const pool = new Pool({
@@ -18,6 +24,20 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT,
 });
+
+// Mistral API configuration
+const axios = require('axios');
+const MISTRAL_API_URL = 'https://api.mistral.ai/v1/chat/completions';
+const API_KEY = process.env.MISTRAL_API_KEY;
+
+// Initialisation du client Mistral
+const client = new Mistral({
+  apiKey: process.env.MISTRAL_API_KEY,
+  server: 'eu', // Optionnel : spécifiez le serveur (ex: 'eu' pour l'Europe)
+});
+
+//List of tables to export 
+const tables = ['products', 'recipes', 'recipe_ingredients', 'recipe_steps'];
 
 // ==================== PRODUCTS ROUTES ====================
 // GET all products
@@ -411,9 +431,6 @@ app.listen(PORT, () => {
 });
 // Add these routes to your server.js file
 
-const fs = require('fs');
-const path = require('path');
-
 const NOTIFICATIONS_FILE = path.join(__dirname, 'notifications.json');
 
 // Helper function to read notifications from file
@@ -618,3 +635,87 @@ app.delete('/api/notifications', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+// ==================== AI CHATBOT ROUTE (MISTRAL) ====================
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { messages } = req.body;
+    console.log('Message reçu mistral:', req.body);
+    console.log("API KEY:", process.env.MISTRAL_API_KEY ? "Loaded" : "NOT LOADED");
+    
+
+    const filePath = path.join(__dirname, "../src/data/myDb.json");
+    const fridgeData = JSON.parse(fs.readFileSync(filePath, "utf8"));
+
+  const systemPrompt = `
+  You are FridgeBot. You answer questions about the user's fridge contents.
+  Their fridge currently contains: ${JSON.stringify(fridgeData)}.
+  Only talk about food-related topics.
+  `;
+
+    // Appel à l'API Mistral via le SDK
+    const response = await client.chat.complete({
+      model: 'mistral-small-latest', // ou 'mistral-medium-latest', etc.
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages
+      ],
+    });
+
+    console.log('Réponse Mistral:', response.choices);
+
+    res.json({ reply: response.choices[0].message.content });
+  } catch (error) {
+    console.error('Erreur API Mistral:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ==================== EXPORT ALL DATA ROUTE INTO A JSON FILE ====================
+app.get('/api/export-all', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const result = {};
+
+    // Fetch data from each table
+    for (const table of tables) {
+      const query = `SELECT * FROM "${table}"`;
+      const { rows } = await client.query(query);
+      result[table] = rows;
+    }
+
+    client.release();
+
+    // Send the combined data as JSON
+    res.json(result);
+  } catch (error) {
+    console.error('Error exporting data:', error);
+    res.status(500).json({ error: 'Failed to export data' });
+  }
+});
+
+// Dans votre serveur Node.js
+app.post('/api/db/write', (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  
+  const dbPath = path.join(__dirname, '../src/data/myDb.json');
+  
+  fs.writeFile(dbPath, JSON.stringify(req.body, null, 2), (err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to write file' });
+    }
+    res.json({ success: true });
+  });
+});
+
+app.get('/run-export', (req, res) => {
+  exec('node ../src/scripts/exportDb.js', (error, stdout, stderr) => {
+    if (error) {
+      return res.status(500).send(`Erreur: ${error.message}`);
+    }
+    res.send(`Sortie: ${stdout}`);
+  });
+});
+
+

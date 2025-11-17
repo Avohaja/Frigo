@@ -220,26 +220,72 @@ function SmartAssistant() {
            'Reformulez votre question ou utilisez les suggestions rapides !';
   };
 
-  const handleSendMessage = () => {
-    if (!inputMessage.trim()) return;
-    const userMessage = {
-      role: 'user',
-      content: inputMessage,
-      timestamp: new Date()
-    };
-    setMessages([...messages, userMessage]);
-    setInputMessage('');
-    setIsTyping(true);
-    setTimeout(() => {
-      const response = generateAIResponse(inputMessage);
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: response,
-        timestamp: new Date()
-      }]);
-      setIsTyping(false);
-    }, 1000);
+  // const handleSendMessage = () => {
+  //   if (!inputMessage.trim()) return;
+  //   const userMessage = {
+  //     role: 'user',
+  //     content: inputMessage,
+  //     timestamp: new Date()
+  //   };
+  //   setMessages([...messages, userMessage]);
+  //   setInputMessage('');
+  //   setIsTyping(true);
+  //   setTimeout(() => {
+  //     const response = generateAIResponse(inputMessage);
+  //     setMessages(prev => [...prev, {
+  //       role: 'assistant',
+  //       content: response,
+  //       timestamp: new Date()
+  //     }]);
+  //     setIsTyping(false);
+  //   }, 1000);
+  // };
+
+const handleSendMessage = async () => {
+  if (!inputMessage.trim()) return;
+  
+  try {
+    const response = await fetch('http://localhost:5000/run-export');
+    const result = await response.text();
+    console.log(result);
+  } catch (error) {
+    console.error("Erreur lors de l'exécution du script:", error);
+  }
+
+  const newMessage = {
+    role: "user",
+    content: inputMessage,
+    timestamp: new Date(),
   };
+
+  setMessages([...messages, newMessage]);
+  setInputMessage("");
+  setIsTyping(true);
+
+  try {
+    const response = await fetch("http://localhost:5000/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages: [
+          ...messages.map(m => ({ role: m.role, content: m.content })),
+          { role: "user", content: inputMessage },
+        ],
+      }),
+    });
+
+    const data = await response.json();
+    setMessages(prev => [
+      ...prev,
+      { role: "assistant", content: data.reply, timestamp: new Date() },
+    ]);
+  } catch (error) {
+    console.error("Error sending message:", error);
+  } finally {
+    setIsTyping(false);
+  }
+};
+
 
   const handleQuickQuestion = (question) => {
     setInputMessage(question);

@@ -1,0 +1,372 @@
+{
+  "products": [
+    {
+      "id": 15,
+      "name": "Oeufs",
+      "quantity": {
+        "unit": "unité",
+        "value": 4
+      },
+      "expiration": "2025-11-08T21:00:00.000Z",
+      "status": "expired",
+      "created_at": "2025-11-15T18:57:30.884Z",
+      "updated_at": "2025-11-15T18:57:30.884Z",
+      "category": "Viandes"
+    },
+    {
+      "id": 14,
+      "name": "Lait",
+      "quantity": {
+        "unit": "L",
+        "value": 1
+      },
+      "expiration": "2025-11-08T21:00:00.000Z",
+      "status": "expired",
+      "created_at": "2025-11-15T18:04:22.284Z",
+      "updated_at": "2025-11-15T18:04:22.284Z",
+      "category": "Boissons"
+    }
+  ],
+  "recipes": [
+    {
+      "id": 9,
+      "title": "Tarte aux pommes",
+      "image": "https://images.unsplash.com/photo-1568702846914-96b305d2aaeb",
+      "type": "Dessert",
+      "time": "1h",
+      "difficulty": "Moyen",
+      "created_at": "2025-11-08T13:21:25.684Z",
+      "updated_at": "2025-11-08T13:21:25.684Z",
+      "is_used": false
+    },
+    {
+      "id": 10,
+      "title": "Soupe à l'oignon",
+      "image": "https://images.unsplash.com/photo-1603231539464-655294529dba",
+      "type": "Soupe",
+      "time": "1h",
+      "difficulty": "Moyen",
+      "created_at": "2025-11-08T13:21:25.684Z",
+      "updated_at": "2025-11-08T13:21:25.684Z",
+      "is_used": false
+    },
+    {
+      "id": 8,
+      "title": "Salade César",
+      "image": "https://images.unsplash.com/photo-1550304943-495849baa258",
+      "type": "Salade",
+      "time": "15 min",
+      "difficulty": "Facile",
+      "created_at": "2025-11-08T13:21:25.684Z",
+      "updated_at": "2025-11-08T13:21:25.684Z",
+      "is_used": false
+    },
+    {
+      "id": 7,
+      "title": "Spaghetti Carbonara",
+      "image": "https://images.unsplash.com/photo-1556910293-c59d9a8d3d3d",
+      "type": "Pâtes",
+      "time": "20 min",
+      "difficulty": "Facile",
+      "created_at": "2025-11-08T13:21:25.684Z",
+      "updated_at": "2025-11-08T13:21:25.684Z",
+      "is_used": false
+    },
+    {
+      "id": 13,
+      "title": "Beignet de banane",
+      "image": "data:image/jpeg;base64,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",
+      "type": "Dessert",
+      "time": "20",
+      "difficulty": "Facile",
+      "created_at": "2025-11-17T06:43:57.430Z",
+      "updated_at": "2025-11-17T06:43:57.430Z",
+      "is_used": false
+    },
+    {
+      "id": 15,
+      "title": "Vary amin anana",
+      "image": "data:image/jpeg;base64,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",
+      "type": "Plat principal",
+      "time": "35",
+      "difficulty": "Facile",
+      "created_at": "2025-11-17T07:05:26.863Z",
+      "updated_at": "2025-11-17T07:05:26.863Z",
+      "is_used": false
+    }
+  ],
+  "recipe_ingredients": [
+    {
+      "id": 170,
+      "recipe_id": 9,
+      "ingredient_name": "Pâte brisée",
+      "is_available": false
+    },
+    {
+      "id": 171,
+      "recipe_id": 9,
+      "ingredient_name": "Pommes",
+      "is_available": false
+    },
+    {
+      "id": 172,
+      "recipe_id": 9,
+      "ingredient_name": "Sucre",
+      "is_available": false
+    },
+    {
+      "id": 173,
+      "recipe_id": 9,
+      "ingredient_name": "Beurre",
+      "is_available": false
+    },
+    {
+      "id": 174,
+      "recipe_id": 9,
+      "ingredient_name": "Cannelle",
+      "is_available": false
+    },
+    {
+      "id": 175,
+      "recipe_id": 10,
+      "ingredient_name": "Oignons",
+      "is_available": false
+    },
+    {
+      "id": 176,
+      "recipe_id": 10,
+      "ingredient_name": "Bouillon de bœuf",
+      "is_available": false
+    },
+    {
+      "id": 177,
+      "recipe_id": 10,
+      "ingredient_name": "Beurre",
+      "is_available": false
+    },
+    {
+      "id": 178,
+      "recipe_id": 10,
+      "ingredient_name": "Pain",
+      "is_available": false
+    },
+    {
+      "id": 179,
+      "recipe_id": 10,
+      "ingredient_name": "Fromage râpé",
+      "is_available": false
+    },
+    {
+      "id": 180,
+      "recipe_id": 8,
+      "ingredient_name": "Laitue romaine",
+      "is_available": true
+    },
+    {
+      "id": 181,
+      "recipe_id": 8,
+      "ingredient_name": "Poulet",
+      "is_available": false
+    },
+    {
+      "id": 182,
+      "recipe_id": 8,
+      "ingredient_name": "Parmesan",
+      "is_available": false
+    },
+    {
+      "id": 183,
+      "recipe_id": 8,
+      "ingredient_name": "Sauce César",
+      "is_available": false
+    },
+    {
+      "id": 184,
+      "recipe_id": 8,
+      "ingredient_name": "Croûtons",
+      "is_available": false
+    },
+    {
+      "id": 185,
+      "recipe_id": 7,
+      "ingredient_name": "Oeufs",
+      "is_available": true
+    },
+    {
+      "id": 186,
+      "recipe_id": 7,
+      "ingredient_name": "Spaghetti",
+      "is_available": false
+    },
+    {
+      "id": 187,
+      "recipe_id": 7,
+      "ingredient_name": "Lardons",
+      "is_available": false
+    },
+    {
+      "id": 188,
+      "recipe_id": 7,
+      "ingredient_name": "Crème fraîche",
+      "is_available": false
+    },
+    {
+      "id": 189,
+      "recipe_id": 7,
+      "ingredient_name": "Parmesan",
+      "is_available": false
+    },
+    {
+      "id": 193,
+      "recipe_id": 13,
+      "ingredient_name": "Oeufs",
+      "is_available": true
+    },
+    {
+      "id": 198,
+      "recipe_id": 15,
+      "ingredient_name": "Oeufs",
+      "is_available": true
+    },
+    {
+      "id": 199,
+      "recipe_id": 15,
+      "ingredient_name": "ananana",
+      "is_available": false
+    },
+    {
+      "id": 200,
+      "recipe_id": 15,
+      "ingredient_name": "riz",
+      "is_available": false
+    }
+  ],
+  "recipe_steps": [
+    {
+      "id": 114,
+      "recipe_id": 8,
+      "step_number": 1,
+      "description": "Laver et sécher la laitue romaine, puis la déchirer en morceaux."
+    },
+    {
+      "id": 115,
+      "recipe_id": 8,
+      "step_number": 2,
+      "description": "Couper le poulet en dés et le faire griller dans une poêle."
+    },
+    {
+      "id": 116,
+      "recipe_id": 8,
+      "step_number": 3,
+      "description": "Dans un grand bol, mélanger la laitue, le poulet, les croûtons et le parmesan."
+    },
+    {
+      "id": 117,
+      "recipe_id": 8,
+      "step_number": 4,
+      "description": "Ajouter la sauce César et bien mélanger."
+    },
+    {
+      "id": 104,
+      "recipe_id": 9,
+      "step_number": 1,
+      "description": "Préchauffer le four à 180°C."
+    },
+    {
+      "id": 105,
+      "recipe_id": 9,
+      "step_number": 2,
+      "description": "Éplucher et couper les pommes en fines tranches."
+    },
+    {
+      "id": 106,
+      "recipe_id": 9,
+      "step_number": 3,
+      "description": "Étaler la pâte dans un moule à tarte et piquer le fond avec une fourchette."
+    },
+    {
+      "id": 107,
+      "recipe_id": 9,
+      "step_number": 4,
+      "description": "Disposer les pommes sur la pâte, saupoudrer de sucre et de cannelle, et ajouter des morceaux de beurre."
+    },
+    {
+      "id": 108,
+      "recipe_id": 9,
+      "step_number": 5,
+      "description": "Enfourner pendant environ 45 minutes, jusqu'à ce que la tarte soit dorée."
+    },
+    {
+      "id": 109,
+      "recipe_id": 10,
+      "step_number": 1,
+      "description": "Émincer finement les oignons."
+    },
+    {
+      "id": 110,
+      "recipe_id": 10,
+      "step_number": 2,
+      "description": "Faire revenir les oignons dans une casserole avec du beurre jusqu'à ce qu'ils caramélisent."
+    },
+    {
+      "id": 111,
+      "recipe_id": 10,
+      "step_number": 3,
+      "description": "Ajouter le bouillon de bœuf et laisser mijoter pendant 30 minutes."
+    },
+    {
+      "id": 112,
+      "recipe_id": 10,
+      "step_number": 4,
+      "description": "Verser la soupe dans des bols, ajouter des tranches de pain et saupoudrer de fromage râpé."
+    },
+    {
+      "id": 113,
+      "recipe_id": 10,
+      "step_number": 5,
+      "description": "Passer sous le gril jusqu'à ce que le fromage soit gratiné."
+    },
+    {
+      "id": 118,
+      "recipe_id": 7,
+      "step_number": 1,
+      "description": "Faire cuire les spaghetti dans une grande casserole d'eau bouillante salée."
+    },
+    {
+      "id": 119,
+      "recipe_id": 7,
+      "step_number": 2,
+      "description": "Faire revenir les lardons dans une poêle sans ajout de matière grasse."
+    },
+    {
+      "id": 120,
+      "recipe_id": 7,
+      "step_number": 3,
+      "description": "Battre les œufs avec le parmesan et la crème fraîche."
+    },
+    {
+      "id": 121,
+      "recipe_id": 7,
+      "step_number": 4,
+      "description": "Égoutter les pâtes et les mélanger immédiatement avec les lardons et la préparation aux œufs."
+    },
+    {
+      "id": 124,
+      "recipe_id": 13,
+      "step_number": 1,
+      "description": "melanger farine, eouf et eau"
+    },
+    {
+      "id": 125,
+      "recipe_id": 13,
+      "step_number": 2,
+      "description": "frire"
+    },
+    {
+      "id": 128,
+      "recipe_id": 15,
+      "step_number": 1,
+      "description": "melanger ingrédient"
+    }
+  ]
+}

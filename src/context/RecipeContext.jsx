@@ -3,6 +3,7 @@ import { useSnackbar } from 'notistack';
 
 const RecipeContext = createContext();
 const API_URL = 'http://localhost:5000/api';
+const DB_PATH = '../data/myDb.json';
 
 export const useRecipes = () => {
   const context = useContext(RecipeContext);
@@ -10,6 +11,40 @@ export const useRecipes = () => {
     throw new Error('useRecipes must be used within RecipeProvider');
   }
   return context;
+};
+
+// Fonction utilitaire pour lire le fichier JSON
+const readJsonFile = async () => {
+  try {
+    const response = await fetch(DB_PATH);
+    if (!response.ok) {
+      throw new Error('Failed to read JSON file');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error reading JSON file:', error);
+    return { recipes: [], recipe_ingredients: [], recipe_steps: [], products: [] };
+  }
+};
+
+// Fonction utilitaire pour écrire dans le fichier JSON
+const writeJsonFile = async (data) => {
+  try {
+    // En développement, vous devrez utiliser un endpoint backend pour écrire le fichier
+    const response = await fetch(`${API_URL}/db/write`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to write to JSON file');
+    }
+    return true;
+  } catch (error) {
+    console.error('Error writing to JSON file:', error);
+    throw error;
+  }
 };
 
 export const RecipeProvider = ({ children }) => {
@@ -45,13 +80,11 @@ export const RecipeProvider = ({ children }) => {
         return null;
       }
 
-      // Get all ingredient names from the recipe
       const allIngredientNames = [
         ...(recipe.availableIngredients || []).map(ing => ing.name.toLowerCase()),
         ...(recipe.missingIngredients || []).map(ing => ing.name.toLowerCase())
       ];
 
-      // Check inventory for each ingredient
       const updatedAvailableIngredients = [];
       const updatedMissingIngredients = [];
 
@@ -62,7 +95,6 @@ export const RecipeProvider = ({ children }) => {
         );
 
         if (productInInventory && productInInventory.quantity.value > 0) {
-          // Ingredient found in inventory
           const existingIngredient = recipe.availableIngredients?.find(ing =>
             ing.name.toLowerCase() === ingredientName
           ) || recipe.missingIngredients?.find(ing =>
@@ -74,7 +106,6 @@ export const RecipeProvider = ({ children }) => {
             quantity: existingIngredient?.quantity || productInInventory.quantity
           });
         } else {
-          // Ingredient not found in inventory
           const existingIngredient = recipe.missingIngredients?.find(ing =>
             ing.name.toLowerCase() === ingredientName
           ) || recipe.availableIngredients?.find(ing =>
@@ -87,14 +118,21 @@ export const RecipeProvider = ({ children }) => {
         }
       });
 
-      // Update the recipe with new ingredient lists
       const updatedRecipe = {
         ...recipe,
         availableIngredients: updatedAvailableIngredients,
         missingIngredients: updatedMissingIngredients
       };
 
-      // Save to backend
+      // 1. Enregistrer dans myDb.json
+      const dbData = await readJsonFile();
+      const recipeIndex = dbData.recipes.findIndex(r => r.id === recipeId);
+      if (recipeIndex !== -1) {
+        dbData.recipes[recipeIndex] = updatedRecipe;
+        await writeJsonFile(dbData);
+      }
+
+      // 2. Envoyer au backend
       const response = await fetch(`${API_URL}/recipes/${recipeId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -130,20 +168,35 @@ export const RecipeProvider = ({ children }) => {
   // Add a new recipe
   const addRecipe = async (recipe) => {
     try {
+      const newRecipe = { 
+        ...recipe, 
+        isUsed: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      // 1. Enregistrer dans myDb.json
+      const dbData = await readJsonFile();
+      const newId = Math.max(...dbData.recipes.map(r => r.id), 0) + 1;
+      const recipeWithId = { ...newRecipe, id: newId };
+      dbData.recipes.push(recipeWithId);
+      await writeJsonFile(dbData);
+
+      // 2. Envoyer au backend
       const response = await fetch(`${API_URL}/recipes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...recipe, isUsed: false }),
+        body: JSON.stringify(recipeWithId),
       });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const newRecipe = await response.json();
+      const savedRecipe = await response.json();
       await fetchRecipes();
       enqueueSnackbar('Recipe added successfully!', { variant: 'success' });
-      return newRecipe;
+      return savedRecipe;
     } catch (error) {
       console.error('Error adding recipe:', error);
       enqueueSnackbar('Failed to add recipe.', { variant: 'error' });
@@ -154,10 +207,24 @@ export const RecipeProvider = ({ children }) => {
   // Update a recipe
   const updateRecipe = async (id, updatedRecipe) => {
     try {
+      const recipeWithTimestamp = {
+        ...updatedRecipe,
+        updated_at: new Date().toISOString()
+      };
+
+      // 1. Enregistrer dans myDb.json
+      const dbData = await readJsonFile();
+      const recipeIndex = dbData.recipes.findIndex(r => r.id === id);
+      if (recipeIndex !== -1) {
+        dbData.recipes[recipeIndex] = { ...dbData.recipes[recipeIndex], ...recipeWithTimestamp };
+        await writeJsonFile(dbData);
+      }
+
+      // 2. Envoyer au backend
       const response = await fetch(`${API_URL}/recipes/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedRecipe),
+        body: JSON.stringify(recipeWithTimestamp),
       });
 
       if (!response.ok) {
@@ -178,6 +245,14 @@ export const RecipeProvider = ({ children }) => {
   // Delete a recipe
   const deleteRecipe = async (id) => {
     try {
+      // 1. Supprimer de myDb.json
+      const dbData = await readJsonFile();
+      dbData.recipes = dbData.recipes.filter(r => r.id !== id);
+      dbData.recipe_ingredients = dbData.recipe_ingredients.filter(ri => ri.recipe_id !== id);
+      dbData.recipe_steps = dbData.recipe_steps.filter(rs => rs.recipe_id !== id);
+      await writeJsonFile(dbData);
+
+      // 2. Supprimer du backend
       const response = await fetch(`${API_URL}/recipes/${id}`, {
         method: 'DELETE',
       });
@@ -198,6 +273,16 @@ export const RecipeProvider = ({ children }) => {
   // Toggle recipe usage
   const toggleRecipeUsage = async (id) => {
     try {
+      // 1. Mettre à jour dans myDb.json
+      const dbData = await readJsonFile();
+      const recipeIndex = dbData.recipes.findIndex(r => r.id === id);
+      if (recipeIndex !== -1) {
+        dbData.recipes[recipeIndex].is_used = !dbData.recipes[recipeIndex].is_used;
+        dbData.recipes[recipeIndex].updated_at = new Date().toISOString();
+        await writeJsonFile(dbData);
+      }
+
+      // 2. Envoyer au backend
       const response = await fetch(`${API_URL}/recipes/${id}/toggle`, {
         method: 'PATCH',
       });
